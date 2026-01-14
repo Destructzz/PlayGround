@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-gray-100 min-h-screen;
+    background-color: #0b0c0f;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(105, 116, 255, 0.16), transparent 30%),
+      radial-gradient(circle at 80% 10%, rgba(137, 92, 255, 0.18), transparent 28%),
+      radial-gradient(circle at 70% 70%, rgba(64, 194, 255, 0.12), transparent 32%),
+      linear-gradient(135deg, #0b0c0f 0%, #0d0e13 50%, #0b0c0f 100%);
+  }
+
+  ::selection {
+    background: rgba(137, 92, 255, 0.24);
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] rounded-2xl;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-200;
+  }
+
+  .muted {
+    @apply text-gray-400 text-sm;
+  }
+
+  .section-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium text-gray-300 hover:text-white transition-colors;
+  }
+
+  .ghost-button {
+    @apply inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-white/25 hover:bg-white/10 transition;
+  }
+
+  .solid-button {
+    @apply inline-flex items-center justify-center rounded-xl bg-white/90 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-white transition;
+  }
+
+  .input-dark {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:border-white/25 focus:outline-none focus:ring-0;
+  }
+
+  .card-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .item-row {
+    @apply flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 hover:bg-white/8 transition;
+  }
+}
