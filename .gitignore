@@ -1,0 +1,43 @@
+# Go artifacts
+**/bin/
+**/dist/
+**/build/
+**/coverage/
+**/*.out
+**/*.test
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+
+# Module and cache files
+**/vendor/
+**/.cache/
+**/.idea/
+**/.vscode/
+**/.DS_Store
+
+# Logs
+*.log
+**/logs/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# SQLC/gen artifacts (keep generated if committed explicitly)
+**/internal/repo/db/*.sql.go
+
+# Docker
+**/tmp/
+**/.tmp/
+
+# Node/Yarn (frontend)
+node_modules/
+**/.turbo/
+**/.next/
+
+# Misc
+*.swp
+*.swo
