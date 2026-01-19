@@ -17,6 +17,8 @@ RUN adduser -D -g '' appuser && apk add --no-cache ca-certificates
 USER appuser
 WORKDIR /home/appuser
 COPY --from=builder /out/api /usr/local/bin/api
+COPY --from=builder /app/docs ./docs
+COPY --from=builder /app/static ./static
 
 ENV APP_HTTP_ADDR=:8080
 EXPOSE 8080

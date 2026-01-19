@@ -23,6 +23,9 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	r.Static("/docs", "./static")
+	r.StaticFile("/openapi.json", "./docs/swagger.json")
+
 	health := handlers.NewHealth(pool)
 
 	r.GET("/healthz", health.Health)
