@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // NewRouter configures Gin engine, middleware and routes.
@@ -18,6 +20,8 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 		gin.Logger(),
 		gin.Recovery(),
 	)
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	health := handlers.NewHealth(pool)
 

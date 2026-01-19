@@ -18,11 +18,23 @@ func NewHealth(pool *pgxpool.Pool) *Health {
 }
 
 // Health returns basic liveness information.
+// @Summary     Liveness check
+// @Description Returns service status and timestamp
+// @Tags        health
+// @Produce     json
+// @Success     200 {object} map[string]any
+// @Router      /healthz [get]
 func (h *Health) Health(c *gin.Context) {
 	response.Health(c, "ok")
 }
 
 // Ready checks database connectivity and reports readiness.
+// @Summary     Readiness check
+// @Description Pings database and returns readiness status
+// @Tags        health
+// @Produce     json
+// @Success     200 {object} map[string]any
+// @Router      /readyz [get]
 func (h *Health) Ready(c *gin.Context) {
 	ctx := c.Request.Context()
 	status := "ready"
@@ -34,11 +46,23 @@ func (h *Health) Ready(c *gin.Context) {
 }
 
 // Ping echoes pong with a timestamp.
+// @Summary     Ping
+// @Description Returns pong with timestamp
+// @Tags        health
+// @Produce     json
+// @Success     200 {object} map[string]any
+// @Router      /api/v1/ping [get]
 func (h *Health) Ping(c *gin.Context) {
 	response.Message(c, "pong")
 }
 
 // Pong echoes ping with a timestamp.
+// @Summary     Pong
+// @Description Returns ping with timestamp
+// @Tags        health
+// @Produce     json
+// @Success     200 {object} map[string]any
+// @Router      /api/v1/pong [get]
 func (h *Health) Pong(c *gin.Context) {
 	response.Message(c, "ping")
 }

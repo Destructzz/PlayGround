@@ -1,0 +1,65 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: Backend API for PlayGround
+  title: PlayGround API
+  version: "1.0"
+paths:
+  /api/v1/ping:
+    get:
+      description: Returns pong with timestamp
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Ping
+      tags:
+      - health
+  /api/v1/pong:
+    get:
+      description: Returns ping with timestamp
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Pong
+      tags:
+      - health
+  /healthz:
+    get:
+      description: Returns service status and timestamp
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Liveness check
+      tags:
+      - health
+  /readyz:
+    get:
+      description: Pings database and returns readiness status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Readiness check
+      tags:
+      - health
+swagger: "2.0"

@@ -1,14 +1,19 @@
+// @title           PlayGround API
+// @version         1.0
+// @description     Backend API for PlayGround
+// @host            localhost:8080
+// @BasePath        /
 package main
 
 import (
+	_ "backend/docs"
+	"backend/internal/app"
 	"context"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-
-	"backend/internal/app"
 )
 
 func main() {
