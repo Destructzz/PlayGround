@@ -22,7 +22,7 @@ func NewHealth(pool *pgxpool.Pool) *Health {
 // @Description Returns service status and timestamp
 // @Tags        health
 // @Produce     json
-// @Success     200 {object} map[string]any
+// @Success     200 {object} response.HealthResponse
 // @Router      /healthz [get]
 func (h *Health) Health(c *gin.Context) {
 	response.Health(c, "ok")
@@ -33,7 +33,7 @@ func (h *Health) Health(c *gin.Context) {
 // @Description Pings database and returns readiness status
 // @Tags        health
 // @Produce     json
-// @Success     200 {object} map[string]any
+// @Success     200 {object} response.HealthResponse
 // @Router      /readyz [get]
 func (h *Health) Ready(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -50,7 +50,7 @@ func (h *Health) Ready(c *gin.Context) {
 // @Description Returns pong with timestamp
 // @Tags        health
 // @Produce     json
-// @Success     200 {object} map[string]any
+// @Success     200 {object} response.MessageResponse
 // @Router      /api/v1/ping [get]
 func (h *Health) Ping(c *gin.Context) {
 	response.Message(c, "pong")
@@ -61,7 +61,7 @@ func (h *Health) Ping(c *gin.Context) {
 // @Description Returns ping with timestamp
 // @Tags        health
 // @Produce     json
-// @Success     200 {object} map[string]any
+// @Success     200 {object} response.MessageResponse
 // @Router      /api/v1/pong [get]
 func (h *Health) Pong(c *gin.Context) {
 	response.Message(c, "ping")

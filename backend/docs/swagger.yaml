@@ -1,4 +1,29 @@
 basePath: /
+definitions:
+  response.HealthResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      status:
+        example: ready
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.MessageResponse:
+    properties:
+      message:
+        example: pong
+        type: string
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -15,8 +40,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
       summary: Ping
       tags:
       - health
@@ -29,8 +53,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
       summary: Pong
       tags:
       - health
@@ -43,8 +66,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.HealthResponse'
       summary: Liveness check
       tags:
       - health
@@ -57,8 +79,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.HealthResponse'
       summary: Readiness check
       tags:
       - health

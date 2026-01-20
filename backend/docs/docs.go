@@ -29,8 +29,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.MessageResponse"
                         }
                     }
                 }
@@ -50,8 +49,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.MessageResponse"
                         }
                     }
                 }
@@ -71,8 +69,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.HealthResponse"
                         }
                     }
                 }
@@ -92,10 +89,45 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.HealthResponse"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "response.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ready"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "pong"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
                 }
             }
         }
