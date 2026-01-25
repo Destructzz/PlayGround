@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS staff;
+DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS zones;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS entity_type;
+DROP TYPE IF EXISTS action_type;
+DROP TYPE IF EXISTS payment_status;
+DROP TYPE IF EXISTS payment_method;
+DROP TYPE IF EXISTS position_type;
+DROP TYPE IF EXISTS booking_status;
+DROP TYPE IF EXISTS zone_type;
+DROP TYPE IF EXISTS role;

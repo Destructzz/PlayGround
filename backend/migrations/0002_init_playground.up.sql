@@ -1,13 +1,52 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TYPE role AS ENUM ('admin', 'seller', 'client');
-CREATE TYPE zone_type AS ENUM ('game', 'event', 'vip', 'lounge', 'sys');
-CREATE TYPE booking_status AS ENUM ('created', 'confirmed', 'canceled', 'completed');
-CREATE TYPE position_type AS ENUM ('admin', 'seller', 'operator', 'tech');
-CREATE TYPE payment_method AS ENUM ('cash', 'card', 'online');
-CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded');
-CREATE TYPE action_type AS ENUM ('create', 'update', 'delete', 'login', 'logout');
-CREATE TYPE entity_type AS ENUM ('booking', 'service', 'zone', 'payment', 'user', 'staff', 'other');
+DO $$ BEGIN
+    CREATE TYPE role AS ENUM ('admin', 'seller', 'client');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE zone_type AS ENUM ('game', 'event', 'vip', 'lounge', 'sys');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE booking_status AS ENUM ('created', 'confirmed', 'canceled', 'completed');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE position_type AS ENUM ('admin', 'seller', 'operator', 'tech');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE payment_method AS ENUM ('cash', 'card', 'online');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE action_type AS ENUM ('create', 'update', 'delete', 'login', 'logout');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE entity_type AS ENUM ('booking', 'service', 'zone', 'payment', 'user', 'staff', 'other');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -96,10 +135,4 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     payload JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ip_address VARCHAR
-);
-
-CREATE TABLE IF NOT EXISTS pings (
-    id BIGSERIAL PRIMARY KEY,
-    content TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
