@@ -28,6 +28,7 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 
 	health := handlers.NewHealth(pool)
 	auth := handlers.NewAuth()
+	zone := handlers.NewZone()
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -36,6 +37,7 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 	api.GET("/auth/:provider/callback", auth.Callback)
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
+	api.POST("/zones", zone.Create)
 
 	return r
 }

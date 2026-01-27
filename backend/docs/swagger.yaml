@@ -1,5 +1,30 @@
 basePath: /
 definitions:
+  domain.CreateZoneRequest:
+    properties:
+      capacity:
+        minimum: 1
+        type: integer
+      description:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/sqlc.ZoneType'
+        enum:
+        - game
+        - event
+        - vip
+        - lounge
+        - sys
+    required:
+    - capacity
+    - name
+    - type
+    type: object
   response.AuthResponse:
     properties:
       request_id:
@@ -66,6 +91,29 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
+  response.ZoneResponse:
+    properties:
+      request_id:
+        type: string
+      timestamp:
+        type: string
+      zone:
+        $ref: '#/definitions/domain.CreateZoneRequest'
+    type: object
+  sqlc.ZoneType:
+    enum:
+    - game
+    - event
+    - vip
+    - lounge
+    - sys
+    type: string
+    x-enum-varnames:
+    - ZoneTypeGame
+    - ZoneTypeEvent
+    - ZoneTypeVip
+    - ZoneTypeLounge
+    - ZoneTypeSys
 host: localhost:8080
 info:
   contact: {}
@@ -151,6 +199,32 @@ paths:
       summary: Pong
       tags:
       - health
+  /api/v1/zones:
+    post:
+      consumes:
+      - application/json
+      description: Creates a zone from JSON payload
+      parameters:
+      - description: Zone payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateZoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create zone
+      tags:
+      - zones
   /healthz:
     get:
       description: Returns service status and timestamp

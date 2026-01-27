@@ -10,8 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Auth struct {
-}
+type Auth struct {}
 
 func NewAuth() *Auth {
 	return &Auth{}
