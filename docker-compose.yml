@@ -30,6 +30,9 @@ services:
       APP_ENV: ${APP_ENV}
       APP_HTTP_ADDR: ${APP_HTTP_ADDR}
       APP_DB_DSN: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      PUBLIC_URL: ${PUBLIC_URL}
     ports:
       - "8080:8080"
 

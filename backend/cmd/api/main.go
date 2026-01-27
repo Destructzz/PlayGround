@@ -8,26 +8,38 @@ package main
 import (
 	_ "backend/docs"
 	"backend/internal/app"
+	"backend/internal/observability"
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"go.uber.org/zap"
 )
 
 func main() {
 	env := getEnv("APP_ENV", "development")
 	addr := getEnv("APP_HTTP_ADDR", ":8080")
 	dsn := strings.TrimSpace(os.Getenv("APP_DB_DSN"))
-	if dsn == "" {
-		log.Fatal("APP_DB_DSN is required")
-	}
-
 	params := app.Params{
 		Env:      strings.ToLower(env),
 		HTTPAddr: addr,
 		DBDSN:    dsn,
+	}
+	logger, err := observability.NewLogger(params.Env)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to init logger: %v\n", err)
+		os.Exit(1)
+	}
+	zap.ReplaceGlobals(logger)
+	defer func() {
+		_ = logger.Sync()
+	}()
+
+	if params.DBDSN == "" {
+		zap.L().Fatal("APP_DB_DSN is required")
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -35,12 +47,12 @@ func main() {
 
 	application, err := app.New(ctx, params)
 	if err != nil {
-		log.Fatalf("init error: %v", err)
+		zap.L().Fatal("init error", zap.Error(err))
 	}
 	defer application.Close()
 
 	if err := application.Run(ctx); err != nil {
-		log.Fatalf("server error: %v", err)
+		zap.L().Fatal("server error", zap.Error(err))
 	}
 }
 

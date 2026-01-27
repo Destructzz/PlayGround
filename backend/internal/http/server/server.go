@@ -17,7 +17,7 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 	r := gin.New()
 	r.Use(
 		middleware.RequestID(),
-		gin.Logger(),
+		middleware.RequestLogger(),
 		gin.Recovery(),
 	)
 
@@ -27,11 +27,13 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 	r.StaticFile("/openapi.json", "./docs/swagger.json")
 
 	health := handlers.NewHealth(pool)
+	auth := handlers.NewAuth()
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
-
 	api := r.Group("/api/v1")
+	api.GET("/auth/:provider", auth.Begin)
+	api.GET("/auth/:provider/callback", auth.Callback)
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
 

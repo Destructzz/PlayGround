@@ -3,12 +3,16 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	httpserver "backend/internal/http/server"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/google"
 )
 
 // Params collects runtime settings for the application.
@@ -41,6 +45,18 @@ func New(ctx context.Context, params Params) (*App, error) {
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+
+	goth.UseProviders(
+		google.New(
+			os.Getenv("GOOGLE_CLIENT_ID"),
+			os.Getenv("GOOGLE_CLIENT_SECRET"),
+			fmt.Sprintf("%s/api/v1/auth/google/callback",
+				os.Getenv("PUBLIC_URL"),
+			),
+			"email",
+			"profile",
+		),
+	)
 
 	return &App{params: params, pool: pool, server: srv}, nil
 }
