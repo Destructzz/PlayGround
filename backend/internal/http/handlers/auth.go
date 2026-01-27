@@ -17,6 +17,14 @@ func NewAuth() *Auth {
 	return &Auth{}
 }
 
+// Begin starts OAuth flow for the given provider.
+// @Summary     Start OAuth
+// @Description Redirects to provider authorization page
+// @Tags        auth
+// @Param       provider path string true "OAuth provider" Enums(google)
+// @Success     307 {string} string "Redirect to provider"
+// @Failure     400 {object} response.ErrorResponse
+// @Router      /api/v1/auth/{provider} [get]
 func (a *Auth) Begin(c *gin.Context) {
 	provider, ok := ensureProvider(c)
 	if !ok {
@@ -26,6 +34,16 @@ func (a *Auth) Begin(c *gin.Context) {
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
+// Callback completes OAuth flow and returns user profile.
+// @Summary     OAuth callback
+// @Description Completes OAuth flow and returns user profile
+// @Tags        auth
+// @Param       provider path string true "OAuth provider" Enums(google)
+// @Produce     json
+// @Success     200 {object} response.AuthResponse
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     401 {object} response.ErrorResponse
+// @Router      /api/v1/auth/{provider}/callback [get]
 func (a *Auth) Callback(c *gin.Context) {
 	provider, ok := ensureProvider(c)
 	if !ok {

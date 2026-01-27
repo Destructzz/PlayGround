@@ -1,5 +1,47 @@
 basePath: /
 definitions:
+  response.AuthResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      user:
+        $ref: '#/definitions/response.AuthUserResponse'
+    type: object
+  response.AuthUserResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: Ada Lovelace
+        type: string
+      provider:
+        example: google
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      code:
+        example: auth_failed
+        type: string
+      details: {}
+      message:
+        example: Authentication failed
+        type: string
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
   response.HealthResponse:
     properties:
       request_id:
@@ -31,6 +73,58 @@ info:
   title: PlayGround API
   version: "1.0"
 paths:
+  /api/v1/auth/{provider}:
+    get:
+      description: Redirects to provider authorization page
+      parameters:
+      - description: OAuth provider
+        enum:
+        - google
+        in: path
+        name: provider
+        required: true
+        type: string
+      responses:
+        "307":
+          description: Redirect to provider
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Start OAuth
+      tags:
+      - auth
+  /api/v1/auth/{provider}/callback:
+    get:
+      description: Completes OAuth flow and returns user profile
+      parameters:
+      - description: OAuth provider
+        enum:
+        - google
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: OAuth callback
+      tags:
+      - auth
   /api/v1/ping:
     get:
       description: Returns pong with timestamp
