@@ -3,6 +3,8 @@ package server
 import (
 	"backend/internal/http/handlers"
 	"backend/internal/http/middleware"
+	"backend/internal/repo/sqlc"
+	"backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,7 +13,7 @@ import (
 )
 
 // NewRouter configures Gin engine, middleware and routes.
-func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
+func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engine {
 	setGinMode(env)
 
 	r := gin.New()
@@ -22,16 +24,17 @@ func NewRouter(env string, pool *pgxpool.Pool) *gin.Engine {
 	)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	r.Static("/docs", "./static")
 	r.StaticFile("/openapi.json", "./docs/swagger.json")
 
 	health := handlers.NewHealth(pool)
 	auth := handlers.NewAuth()
-	zone := handlers.NewZone()
+	zoneService := service.NewZone(queries)
+	zone := handlers.NewZone(zoneService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
+
 	api := r.Group("/api/v1")
 	api.GET("/auth/:provider", auth.Begin)
 	api.GET("/auth/:provider/callback", auth.Callback)
