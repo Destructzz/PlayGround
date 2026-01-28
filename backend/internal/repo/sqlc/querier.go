@@ -10,7 +10,11 @@ import (
 
 type Querier interface {
 	CreatePing(ctx context.Context, content string) (Ping, error)
+	CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, error)
+	GetZoneByID(ctx context.Context, id int64) (Zone, error)
 	ListPings(ctx context.Context) ([]Ping, error)
+	ListZones(ctx context.Context) ([]Zone, error)
+	PatchZone(ctx context.Context, arg PatchZoneParams) (Zone, error)
 }
 
 var _ Querier = (*Queries)(nil)
