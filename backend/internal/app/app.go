@@ -9,6 +9,7 @@ import (
 	"time"
 
 	httpserver "backend/internal/http/server"
+	"backend/internal/repo/sqlc"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/markbates/goth"
@@ -36,7 +37,8 @@ func New(ctx context.Context, params Params) (*App, error) {
 		return nil, err
 	}
 
-	engine := httpserver.NewRouter(params.Env, pool)
+	queries := sqlc.New(pool)
+	engine := httpserver.NewRouter(params.Env, pool, queries)
 	srv := &http.Server{
 		Addr:              params.HTTPAddr,
 		Handler:           engine,
