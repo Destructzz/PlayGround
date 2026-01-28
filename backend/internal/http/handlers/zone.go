@@ -3,15 +3,19 @@ package handlers
 import (
 	"backend/internal/domain"
 	"backend/internal/http/response"
+	"backend/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-type Zone struct{}
+type Zone struct {
+	zoneService *service.ZoneService
+}
 
-func NewZone() *Zone {
-	return &Zone{}
+func NewZone(zoneService *service.ZoneService) *Zone {
+	return &Zone{zoneService: zoneService}
 }
 
 // Create создает зону.
@@ -32,5 +36,13 @@ func (z *Zone) Create(c *gin.Context) {
 		return
 	}
 
-	response.Zone(c, req)
+	zone, err := z.zoneService.CreateZone(c.Request.Context(), req)
+
+	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
+		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		return
+	}
+
+	response.Zone(c, zone)
 }
