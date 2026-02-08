@@ -4,9 +4,14 @@ import (
 	"backend/internal/domain"
 	"backend/internal/http/response"
 	"backend/internal/service"
+	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +32,7 @@ func NewZone(zoneService *service.ZoneService) *Zone {
 // @Param       payload body domain.CreateZoneRequest true "Zone payload"
 // @Success     200 {object} response.ZoneResponse
 // @Failure     400 {object} response.ErrorResponse
-// @Router      /api/v1/zones [post]
+// @Router      /api/v1/zone [post]
 func (z *Zone) Create(c *gin.Context) {
 	var req domain.CreateZoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,10 +44,80 @@ func (z *Zone) Create(c *gin.Context) {
 	zone, err := z.zoneService.CreateZone(c.Request.Context(), req)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr){
+			switch pgErr.Code{
+				case "23505":
+					response.Error(c, http.StatusBadRequest, "bad_request", fmt.Sprintf("zone %s is already exist", req.Name), nil)
+					return
+			}
+		}
+
 		zap.L().Warn("database error", zap.Error(err))
 		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
 		return
 	}
 
-	response.Zone(c, zone)
+	response.CreateZone(c, zone)
+}
+
+// Get возвращает все зоны.
+// @Summary     List zones
+// @Description Returns all zones
+// @Tags        zones
+// @Produce     json
+// @Success     200 {object} response.ZoneListResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/zone [get]
+func (z *Zone) Get(c *gin.Context) {
+	zones, err := z.zoneService.GetZones(c.Request.Context())
+
+	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
+		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		return
+	}
+
+	response.GetZone(c, zones)
+}
+
+// GetById возвращает зону по id.
+// @Summary     Get zone by id
+// @Description Returns zone id from path param
+// @Tags        zones
+// @Produce     json
+// @Param       id path int64 true "Zone ID"
+// @Success     200 {object} response.ZoneResponse
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     404 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/zone/{id} [get]
+func (z *Zone) GetById(c *gin.Context) {
+	rawID := c.Param("id")
+	if rawID == "" {
+		zap.L().Warn("missing id param")
+		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		return
+	}
+
+	id, err := strconv.ParseInt(rawID, 10, 64)
+	if err != nil || id <= 0 {
+		zap.L().Warn("invalid id param", zap.String("value", rawID))
+		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		return
+	}
+
+	zone, err := z.zoneService.GetZoneByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Error(c, 1488, "not_found", "zone not found", nil)
+			return
+		}
+
+		zap.L().Warn("database error", zap.Error(err))
+		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		return
+	}
+
+	response.GetZoneByID(c, zone)
 }
