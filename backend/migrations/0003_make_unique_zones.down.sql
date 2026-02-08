@@ -1,0 +1,2 @@
+ALTER TABLE zones
+DROP CONSTRAINT zones_unique
