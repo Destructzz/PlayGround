@@ -40,7 +40,12 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	api.GET("/auth/:provider/callback", auth.Callback)
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
-	api.POST("/zones", zone.Create)
+
+	zoneScope := api.Group("/zone")
+
+	zoneScope.POST("/", zone.Create)
+	zoneScope.GET("/", zone.Get)
+	zoneScope.GET("/:id", zone.GetById)
 
 	return r
 }
