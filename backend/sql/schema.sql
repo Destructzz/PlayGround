@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS zones (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR NOT NULL,
+    name VARCHAR NOT NULL UNIQUE,
     zone_type zone_type NOT NULL,
     capacity INTEGER NOT NULL,
     description TEXT,
