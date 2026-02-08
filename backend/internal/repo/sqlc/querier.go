@@ -11,6 +11,7 @@ import (
 type Querier interface {
 	CreatePing(ctx context.Context, content string) (Ping, error)
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, error)
+	DeleteZone(ctx context.Context, id int64) (int64, error)
 	GetZoneByID(ctx context.Context, id int64) (Zone, error)
 	ListPings(ctx context.Context) ([]Ping, error)
 	ListZones(ctx context.Context) ([]Zone, error)

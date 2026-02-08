@@ -244,6 +244,110 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Deletes zone by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zones"
+                ],
+                "summary": "Delete zone",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Zone ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DeleteZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Partially updates zone fields by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zones"
+                ],
+                "summary": "Patch zone",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Zone ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Zone patch payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.PatchZoneRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/healthz": {
@@ -325,6 +429,38 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.PatchZoneRequest": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "game",
+                        "event",
+                        "vip",
+                        "lounge",
+                        "sys"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.ZoneType"
+                        }
+                    ]
+                }
+            }
+        },
         "response.AuthResponse": {
             "type": "object",
             "properties": {
@@ -359,6 +495,23 @@ const docTemplate = `{
                 "provider": {
                     "type": "string",
                     "example": "google"
+                }
+            }
+        },
+        "response.DeleteZoneResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
                 }
             }
         },

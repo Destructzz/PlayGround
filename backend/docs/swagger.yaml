@@ -25,6 +25,27 @@ definitions:
     - name
     - type
     type: object
+  domain.PatchZoneRequest:
+    properties:
+      capacity:
+        minimum: 1
+        type: integer
+      description:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/sqlc.ZoneType'
+        enum:
+        - game
+        - event
+        - vip
+        - lounge
+        - sys
+    type: object
   response.AuthResponse:
     properties:
       request_id:
@@ -49,6 +70,18 @@ definitions:
         type: string
       provider:
         example: google
+        type: string
+    type: object
+  response.DeleteZoneResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
   response.ErrorResponse:
@@ -284,6 +317,37 @@ paths:
       tags:
       - zones
   /api/v1/zone/{id}:
+    delete:
+      description: Deletes zone by id
+      parameters:
+      - description: Zone ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DeleteZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete zone
+      tags:
+      - zones
     get:
       description: Returns zone id from path param
       parameters:
@@ -313,6 +377,45 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Get zone by id
+      tags:
+      - zones
+    patch:
+      consumes:
+      - application/json
+      description: Partially updates zone fields by id
+      parameters:
+      - description: Zone ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Zone patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchZoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch zone
       tags:
       - zones
   /healthz:

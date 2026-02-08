@@ -39,3 +39,43 @@ func (z *ZoneService) GetZones(ctx context.Context) ([]sqlc.Zone, error) {
 func (z *ZoneService) GetZoneByID(ctx context.Context, id int64) (sqlc.Zone, error) {
 	return z.queries.GetZoneByID(ctx, id)
 }
+
+func (z *ZoneService) DeleteByID(ctx context.Context, id int64) (int64, error) {
+	return z.queries.DeleteZone(ctx, id)
+}
+
+func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZoneRequest) (sqlc.Zone, error) {
+	params := sqlc.PatchZoneParams{ID: id}
+	if dto.Name != nil {
+		params.Name = pgtype.Text{
+			String: *dto.Name,
+			Valid:  true,
+		}
+	}
+	if dto.Type != nil {
+		params.ZoneType = sqlc.NullZoneType{
+			ZoneType: *dto.Type,
+			Valid:    true,
+		}
+	}
+	if dto.Capacity != nil {
+		params.Capacity = pgtype.Int4{
+			Int32: int32(*dto.Capacity),
+			Valid: true,
+		}
+	}
+	if dto.Description != nil {
+		params.Description = pgtype.Text{
+			String: *dto.Description,
+			Valid:  true,
+		}
+	}
+	if dto.IsActive != nil {
+		params.IsActive = pgtype.Bool{
+			Bool:  *dto.IsActive,
+			Valid: true,
+		}
+	}
+
+	return z.queries.PatchZone(ctx, params)
+}

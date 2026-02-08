@@ -11,3 +11,12 @@ type CreateZoneRequest struct {
 	Description string        `json:"description"`
 	IsActive    *bool         `json:"is_active"`
 }
+
+type PatchZoneRequest struct {
+	Name        *string        `json:"name" binding:"omitempty"`
+	Type        *sqlc.ZoneType `json:"type" binding:"omitempty,oneof=game event vip lounge sys"`
+	Capacity    *int           `json:"capacity" binding:"omitempty,min=1"`
+	Description *string        `json:"description"`
+	IsActive    *bool          `json:"is_active"`
+}
+

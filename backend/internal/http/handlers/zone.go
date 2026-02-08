@@ -110,7 +110,102 @@ func (z *Zone) GetById(c *gin.Context) {
 	zone, err := z.zoneService.GetZoneByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			response.Error(c, 1488, "not_found", "zone not found", nil)
+			zap.L().Warn("incorect id", zap.Error(err))
+			response.Error(c, http.StatusBadRequest, "not_found", "zone not found", nil)
+			return
+		}
+
+		zap.L().Warn("database error", zap.Error(err))
+		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		return
+	}
+
+	response.GetZoneByID(c, zone)
+}
+
+// Delete удаляет зону по id.
+// @Summary     Delete zone
+// @Description Deletes zone by id
+// @Tags        zones
+// @Produce     json
+// @Param       id path int64 true "Zone ID"
+// @Success     200 {object} response.DeleteZoneResponse
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     404 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/zone/{id} [delete]
+func (z *Zone) Delete(c *gin.Context){
+	rawID := c.Param("id")
+	if rawID == "" {
+		zap.L().Warn("missing id param")
+		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		return
+	}
+
+	id, err := strconv.ParseInt(rawID, 10, 64)
+	if err != nil || id <= 0 {
+		zap.L().Warn("invalid id param", zap.String("value", rawID))
+		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		return
+	}
+
+	_, err = z.zoneService.DeleteByID(c.Request.Context(), id)
+
+	if err != nil{
+		if errors.Is(err, pgx.ErrNoRows){
+			zap.L().Warn("incorect id", zap.Error(err))
+			response.Error(c, http.StatusBadRequest, "bad_request", fmt.Sprintf("zone with %d ID doesn't exist", id),nil)
+			return
+		}
+
+		zap.L().Warn("database error", zap.Error(err))
+		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		return
+	}
+
+	response.DeleteZone(c, id)
+}
+
+// Patch обновляет зону по id.
+// @Summary     Patch zone
+// @Description Partially updates zone fields by id
+// @Tags        zones
+// @Accept      json
+// @Produce     json
+// @Param       id path int64 true "Zone ID"
+// @Param       payload body domain.PatchZoneRequest true "Zone patch payload"
+// @Success     200 {object} response.ZoneResponse
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     404 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/zone/{id} [patch]
+func (z *Zone) Patch(c *gin.Context){
+	rawID := c.Param("id")
+	if rawID == "" {
+		zap.L().Warn("missing id param")
+		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		return
+	}
+
+	id, err := strconv.ParseInt(rawID, 10, 64)
+	if err != nil || id <= 0 {
+		zap.L().Warn("invalid id param", zap.String("value", rawID))
+		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		return
+	}
+
+	var req domain.PatchZoneRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		br := response.ParseBindError(err)
+		response.Error(c, http.StatusBadRequest, "creation_failed", "This data structure are not allowed", br)
+		return
+	}
+
+	zone, err := z.zoneService.PatchByID(c.Request.Context(), id, req)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			zap.L().Warn("incorect id", zap.Error(err))
+			response.Error(c, http.StatusBadRequest, "not_found", "zone not found", nil)
 			return
 		}
 

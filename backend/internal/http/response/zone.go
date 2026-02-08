@@ -38,6 +38,22 @@ func GetZone(c *gin.Context, zones []sqlc.Zone) {
 	c.JSON(http.StatusOK, payload)
 }
 
+func DeleteZone(c *gin.Context, id int64){
+	payload := gin.H{
+		"id" : id,
+		"timestamp": time.Now().UTC(),
+	}
+
+	withRequestID(c, payload)
+	c.JSON(http.StatusOK, payload)
+}
+
+type DeleteZoneResponse struct {
+	ID        int64     `json:"id" example:"1"`
+	Timestamp time.Time `json:"timestamp" example:"2026-01-19T15:37:27.514667373Z"`
+	RequestID string    `json:"request_id,omitempty" example:"7fbd6854-8e42-4451-80ee-6da60aeceacd"`
+}
+
 type ZoneResponse struct {
 	Zone      ZoneDoc   `json:"zone"`
 	Timestamp time.Time `json:"timestamp" example:"2026-01-19T15:37:27.514667373Z"`

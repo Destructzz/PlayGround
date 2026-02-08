@@ -46,7 +46,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	zoneScope.POST("/", zone.Create)
 	zoneScope.GET("/", zone.Get)
 	zoneScope.GET("/:id", zone.GetById)
-
+	zoneScope.DELETE("/:id", zone.Delete)
+	zoneScope.PATCH("/:id", zone.Patch)
 	return r
 }
 

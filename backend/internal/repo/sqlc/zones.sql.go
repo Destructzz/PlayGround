@@ -45,6 +45,18 @@ func (q *Queries) CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, e
 	return i, err
 }
 
+const deleteZone = `-- name: DeleteZone :one
+DELETE FROM zones
+WHERE id = $1
+RETURNING id
+`
+
+func (q *Queries) DeleteZone(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRow(ctx, deleteZone, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getZoneByID = `-- name: GetZoneByID :one
 SELECT id, name, zone_type, capacity, description, is_active, created_at, updated_at
 FROM zones
@@ -104,33 +116,33 @@ func (q *Queries) ListZones(ctx context.Context) ([]Zone, error) {
 
 const patchZone = `-- name: PatchZone :one
 UPDATE zones
-SET name = COALESCE($2, name),
-    zone_type = COALESCE($3, zone_type),
-    capacity = COALESCE($4, capacity),
-    description = COALESCE($5, description),
-    is_active = COALESCE($6, is_active),
+SET name = COALESCE($1, name),
+    zone_type = COALESCE($2, zone_type),
+    capacity = COALESCE($3, capacity),
+    description = COALESCE($4, description),
+    is_active = COALESCE($5, is_active),
     updated_at = NOW()
-WHERE id = $1
+WHERE id = $6
 RETURNING id, name, zone_type, capacity, description, is_active, created_at, updated_at
 `
 
 type PatchZoneParams struct {
-	ID          int64       `json:"id"`
-	Name        string      `json:"name"`
-	ZoneType    ZoneType    `json:"zone_type"`
-	Capacity    int32       `json:"capacity"`
-	Description pgtype.Text `json:"description"`
-	IsActive    bool        `json:"is_active"`
+	Name        pgtype.Text  `json:"name"`
+	ZoneType    NullZoneType `json:"zone_type"`
+	Capacity    pgtype.Int4  `json:"capacity"`
+	Description pgtype.Text  `json:"description"`
+	IsActive    pgtype.Bool  `json:"is_active"`
+	ID          int64        `json:"id"`
 }
 
 func (q *Queries) PatchZone(ctx context.Context, arg PatchZoneParams) (Zone, error) {
 	row := q.db.QueryRow(ctx, patchZone,
-		arg.ID,
 		arg.Name,
 		arg.ZoneType,
 		arg.Capacity,
 		arg.Description,
 		arg.IsActive,
+		arg.ID,
 	)
 	var i Zone
 	err := row.Scan(
