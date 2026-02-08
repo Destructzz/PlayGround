@@ -91,14 +91,56 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
+  response.ZoneDoc:
+    properties:
+      capacity:
+        example: 20
+        type: integer
+      created_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      description:
+        example: Large hall
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Main Hall
+        type: string
+      updated_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      zone_type:
+        example: game
+        type: string
+    type: object
+  response.ZoneListResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      zones:
+        items:
+          $ref: '#/definitions/response.ZoneDoc'
+        type: array
+    type: object
   response.ZoneResponse:
     properties:
       request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
         type: string
       timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
         type: string
       zone:
-        $ref: '#/definitions/domain.CreateZoneRequest'
+        $ref: '#/definitions/response.ZoneDoc'
     type: object
   sqlc.ZoneType:
     enum:
@@ -199,7 +241,23 @@ paths:
       summary: Pong
       tags:
       - health
-  /api/v1/zones:
+  /api/v1/zone:
+    get:
+      description: Returns all zones
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ZoneListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List zones
+      tags:
+      - zones
     post:
       consumes:
       - application/json
@@ -223,6 +281,38 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Create zone
+      tags:
+      - zones
+  /api/v1/zone/{id}:
+    get:
+      description: Returns zone id from path param
+      parameters:
+      - description: Zone ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get zone by id
       tags:
       - zones
   /healthz:

@@ -134,7 +134,31 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/zones": {
+        "/api/v1/zone": {
+            "get": {
+                "description": "Returns all zones",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zones"
+                ],
+                "summary": "List zones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ZoneListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Creates a zone from JSON payload",
                 "consumes": [
@@ -167,6 +191,54 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/zone/{id}": {
+            "get": {
+                "description": "Returns zone id from path param",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zones"
+                ],
+                "summary": "Get zone by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Zone ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -346,17 +418,75 @@ const docTemplate = `{
                 }
             }
         },
+        "response.ZoneDoc": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Large hall"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Main Hall"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "zone_type": {
+                    "type": "string",
+                    "example": "game"
+                }
+            }
+        },
+        "response.ZoneListResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ZoneDoc"
+                    }
+                }
+            }
+        },
         "response.ZoneResponse": {
             "type": "object",
             "properties": {
                 "request_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
                 },
                 "timestamp": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
                 },
                 "zone": {
-                    "$ref": "#/definitions/domain.CreateZoneRequest"
+                    "$ref": "#/definitions/response.ZoneDoc"
                 }
             }
         },
