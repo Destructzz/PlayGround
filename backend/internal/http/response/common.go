@@ -8,20 +8,64 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ResponseBuilder struct {
+	status  int
+	payload gin.H
+}
+
+type ResponseOption func(*ResponseBuilder) error
+
+func NewResponseBuilder(options ...ResponseOption) *ResponseBuilder {
+	rb := &ResponseBuilder{
+		status: http.StatusOK,
+		payload: gin.H{
+			"timestamp": time.Now().UTC(),
+		},
+	}
+
+	for _, opt := range options {
+		_ = opt(rb) // Игнорируем ошибку, поскольку наши опции сейчас не падают
+	}
+
+	return rb
+}
+
+func WithData(name string, obj any) ResponseOption {
+	return func(rb *ResponseBuilder) error {
+		if name != "" {
+			rb.payload[name] = obj
+		}
+		return nil
+	}
+}
+
+func WithStatus(status int) ResponseOption {
+	return func(rb *ResponseBuilder) error {
+		rb.status = status
+		return nil
+	}
+}
+
+func WithError(code string, msg string, details any) ResponseOption {
+	return func(rb *ResponseBuilder) error {
+		rb.payload["code"] = code
+		rb.payload["message"] = msg
+		if details != nil {
+			rb.payload["details"] = details
+		}
+		return nil
+	}
+}
+
+func (rb *ResponseBuilder) JSON(c *gin.Context) {
+	withRequestID(c, rb.payload)
+	c.JSON(rb.status, rb.payload)
+}
+
 func withRequestID(c *gin.Context, payload gin.H) {
 	if rid, ok := middleware.RequestIDFromContext(c); ok {
 		payload["request_id"] = rid
 	}
-}
-
-func Struct(c *gin.Context, status int, nameObj string, obj any){
-	payload := gin.H{
-		nameObj:   obj,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusOK, payload)
 }
 
 type ParamResponse struct {
