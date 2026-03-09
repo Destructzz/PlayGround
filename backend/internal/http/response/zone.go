@@ -1,52 +1,8 @@
 package response
 
 import (
-	"backend/internal/repo/sqlc"
-	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
-
-func CreateZone(c *gin.Context, zone sqlc.Zone) {
-	payload := gin.H{
-		"zone":      zone,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusCreated, payload)
-}
-
-func GetZoneByID(c *gin.Context, zone sqlc.Zone) {
-	payload := gin.H{
-		"zone":      zone,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusOK, payload)
-}
-
-func GetZone(c *gin.Context, zones []sqlc.Zone) {
-	payload := gin.H{
-		"zones":     zones,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusOK, payload)
-}
-
-func DeleteZone(c *gin.Context, id int64){
-	payload := gin.H{
-		"id" : id,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusOK, payload)
-}
 
 type DeleteZoneResponse struct {
 	ID        int64     `json:"id" example:"1"`

@@ -1,10 +1,7 @@
 package response
 
 import (
-	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type AuthUserResponse struct {
@@ -18,14 +15,4 @@ type AuthResponse struct {
 	User      AuthUserResponse `json:"user"`
 	Timestamp time.Time        `json:"timestamp" example:"2026-01-19T15:37:27.514667373Z"`
 	RequestID string           `json:"request_id,omitempty" example:"7fbd6854-8e42-4451-80ee-6da60aeceacd"`
-}
-
-func Auth(c *gin.Context, user AuthUserResponse) {
-	payload := gin.H{
-		"user":      user,
-		"timestamp": time.Now().UTC(),
-	}
-
-	withRequestID(c, payload)
-	c.JSON(http.StatusOK, payload)
 }
