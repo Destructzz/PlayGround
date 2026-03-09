@@ -37,7 +37,10 @@ func (z *Zone) Create(c *gin.Context) {
 	var req domain.CreateZoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		br := response.ParseBindError(err)
-		response.Error(c, http.StatusBadRequest, "creation_failed", "This data structure are not allowed", br)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("creation_failed", "This data structure are not allowed", br),
+		).JSON(c)
 		return
 	}
 
@@ -45,20 +48,29 @@ func (z *Zone) Create(c *gin.Context) {
 
 	if err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr){
-			switch pgErr.Code{
-				case "23505":
-					response.Error(c, http.StatusBadRequest, "bad_request", fmt.Sprintf("zone %s is already exist", req.Name), nil)
-					return
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505":
+				response.NewResponseBuilder(
+					response.WithStatus(http.StatusBadRequest),
+					response.WithError("bad_request", fmt.Sprintf("zone %s is already exist", req.Name), nil),
+				).JSON(c)
+				return
 			}
 		}
 
 		zap.L().Warn("database error", zap.Error(err))
-		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
 		return
 	}
 
-	response.CreateZone(c, zone)
+	response.NewResponseBuilder(
+		response.WithStatus(http.StatusCreated),
+		response.WithData("zone", zone),
+	).JSON(c)
 }
 
 // Get возвращает все зоны.
@@ -74,11 +86,16 @@ func (z *Zone) Get(c *gin.Context) {
 
 	if err != nil {
 		zap.L().Warn("database error", zap.Error(err))
-		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
 		return
 	}
 
-	response.GetZone(c, zones)
+	response.NewResponseBuilder(
+		response.WithData("zones", zones),
+	).JSON(c)
 }
 
 // GetById возвращает зону по id.
@@ -96,14 +113,20 @@ func (z *Zone) GetById(c *gin.Context) {
 	rawID := c.Param("id")
 	if rawID == "" {
 		zap.L().Warn("missing id param")
-		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "can't take url parametrs", nil),
+		).JSON(c)
 		return
 	}
 
 	id, err := strconv.ParseInt(rawID, 10, 64)
 	if err != nil || id <= 0 {
 		zap.L().Warn("invalid id param", zap.String("value", rawID))
-		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "invalid id", nil),
+		).JSON(c)
 		return
 	}
 
@@ -111,16 +134,24 @@ func (z *Zone) GetById(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			zap.L().Warn("incorect id", zap.Error(err))
-			response.Error(c, http.StatusBadRequest, "not_found", "zone not found", nil)
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("not_found", "zone not found", nil),
+			).JSON(c)
 			return
 		}
 
 		zap.L().Warn("database error", zap.Error(err))
-		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
 		return
 	}
 
-	response.GetZoneByID(c, zone)
+	response.NewResponseBuilder(
+		response.WithData("zone", zone),
+	).JSON(c)
 }
 
 // Delete удаляет зону по id.
@@ -134,36 +165,50 @@ func (z *Zone) GetById(c *gin.Context) {
 // @Failure     404 {object} response.ErrorResponse
 // @Failure     500 {object} response.ErrorResponse
 // @Router      /api/v1/zone/{id} [delete]
-func (z *Zone) Delete(c *gin.Context){
+func (z *Zone) Delete(c *gin.Context) {
 	rawID := c.Param("id")
 	if rawID == "" {
 		zap.L().Warn("missing id param")
-		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "can't take url parametrs", nil),
+		).JSON(c)
 		return
 	}
 
 	id, err := strconv.ParseInt(rawID, 10, 64)
 	if err != nil || id <= 0 {
 		zap.L().Warn("invalid id param", zap.String("value", rawID))
-		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "invalid id", nil),
+		).JSON(c)
 		return
 	}
 
 	_, err = z.zoneService.DeleteByID(c.Request.Context(), id)
 
-	if err != nil{
-		if errors.Is(err, pgx.ErrNoRows){
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			zap.L().Warn("incorect id", zap.Error(err))
-			response.Error(c, http.StatusBadRequest, "bad_request", fmt.Sprintf("zone with %d ID doesn't exist", id),nil)
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("bad_request", fmt.Sprintf("zone with %d ID doesn't exist", id), nil),
+			).JSON(c)
 			return
 		}
 
 		zap.L().Warn("database error", zap.Error(err))
-		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
 		return
 	}
 
-	response.DeleteZone(c, id)
+	response.NewResponseBuilder(
+		response.WithData("id", id),
+	).JSON(c)
 }
 
 // Patch обновляет зону по id.
@@ -179,25 +224,34 @@ func (z *Zone) Delete(c *gin.Context){
 // @Failure     404 {object} response.ErrorResponse
 // @Failure     500 {object} response.ErrorResponse
 // @Router      /api/v1/zone/{id} [patch]
-func (z *Zone) Patch(c *gin.Context){
+func (z *Zone) Patch(c *gin.Context) {
 	rawID := c.Param("id")
 	if rawID == "" {
 		zap.L().Warn("missing id param")
-		response.Error(c, http.StatusBadRequest, "failed_param", "can't take url parametrs", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "can't take url parametrs", nil),
+		).JSON(c)
 		return
 	}
 
 	id, err := strconv.ParseInt(rawID, 10, 64)
 	if err != nil || id <= 0 {
 		zap.L().Warn("invalid id param", zap.String("value", rawID))
-		response.Error(c, http.StatusBadRequest, "failed_param", "invalid id", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("failed_param", "invalid id", nil),
+		).JSON(c)
 		return
 	}
 
 	var req domain.PatchZoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		br := response.ParseBindError(err)
-		response.Error(c, http.StatusBadRequest, "creation_failed", "This data structure are not allowed", br)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("creation_failed", "This data structure are not allowed", br),
+		).JSON(c)
 		return
 	}
 
@@ -205,14 +259,22 @@ func (z *Zone) Patch(c *gin.Context){
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			zap.L().Warn("incorect id", zap.Error(err))
-			response.Error(c, http.StatusBadRequest, "not_found", "zone not found", nil)
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("not_found", "zone not found", nil),
+			).JSON(c)
 			return
 		}
 
 		zap.L().Warn("database error", zap.Error(err))
-		response.Error(c, http.StatusInternalServerError, "database_fault", "some problems while using database", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
 		return
 	}
 
-	response.GetZoneByID(c, zone)
+	response.NewResponseBuilder(
+		response.WithData("zone", zone),
+	).JSON(c)
 }

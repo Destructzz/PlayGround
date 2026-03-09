@@ -25,7 +25,9 @@ func NewHealth(pool *pgxpool.Pool) *Health {
 // @Success     200 {object} response.HealthResponse
 // @Router      /healthz [get]
 func (h *Health) Health(c *gin.Context) {
-	response.Health(c, "ok")
+	response.NewResponseBuilder(
+		response.WithData("status", "ok"),
+	).JSON(c)
 }
 
 // Ready checks database connectivity and reports readiness.
@@ -42,7 +44,9 @@ func (h *Health) Ready(c *gin.Context) {
 		status = "degraded"
 	}
 
-	response.Health(c, status)
+	response.NewResponseBuilder(
+		response.WithData("status", status),
+	).JSON(c)
 }
 
 // Ping echoes pong with a timestamp.
@@ -53,7 +57,9 @@ func (h *Health) Ready(c *gin.Context) {
 // @Success     200 {object} response.MessageResponse
 // @Router      /api/v1/ping [get]
 func (h *Health) Ping(c *gin.Context) {
-	response.Message(c, "pong")
+	response.NewResponseBuilder(
+		response.WithData("message", "pong"),
+	).JSON(c)
 }
 
 // Pong echoes ping with a timestamp.
@@ -64,5 +70,7 @@ func (h *Health) Ping(c *gin.Context) {
 // @Success     200 {object} response.MessageResponse
 // @Router      /api/v1/pong [get]
 func (h *Health) Pong(c *gin.Context) {
-	response.Message(c, "ping")
+	response.NewResponseBuilder(
+		response.WithData("message", "ping"),
+	).JSON(c)
 }

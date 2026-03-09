@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Auth struct {}
+type Auth struct{}
 
 func NewAuth() *Auth {
 	return &Auth{}
@@ -57,16 +57,21 @@ func (a *Auth) Callback(c *gin.Context) {
 			logger = logger.With(zap.String("request_id", rid))
 		}
 		logger.Warn("auth callback error", zap.String("provider", provider), zap.Error(err))
-		response.ErrorUnauthorized(c, "auth_failed", "Authentication failed", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(401),
+			response.WithError("auth_failed", "Authentication failed", nil),
+		).JSON(c)
 		return
 	}
 
-	response.Auth(c, response.AuthUserResponse{
-		Email:     user.Email,
-		AvatarURL: user.AvatarURL,
-		Name:      user.Name,
-		Provider:  user.Provider,
-	})
+	response.NewResponseBuilder(
+		response.WithData("user", response.AuthUserResponse{
+			Email:     user.Email,
+			AvatarURL: user.AvatarURL,
+			Name:      user.Name,
+			Provider:  user.Provider,
+		}),
+	).JSON(c)
 }
 
 func ensureProvider(c *gin.Context) (string, bool) {
@@ -75,7 +80,10 @@ func ensureProvider(c *gin.Context) (string, bool) {
 		provider = c.Query("provider")
 	}
 	if provider == "" {
-		response.ErrorBadRequest(c, "provider_required", "Provider is required", nil)
+		response.NewResponseBuilder(
+			response.WithStatus(400),
+			response.WithError("provider_required", "Provider is required", nil),
+		).JSON(c)
 		return "", false
 	}
 	return provider, true
