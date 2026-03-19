@@ -31,6 +31,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	auth := handlers.NewAuth()
 	zoneService := service.NewZone(queries)
 	zone := handlers.NewZone(zoneService)
+	serviceService := service.NewServiceService(queries)
+	service := handlers.NewService(serviceService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -43,11 +45,19 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	zoneScope := api.Group("/zone")
 
-	zoneScope.POST("/", zone.Create)
-	zoneScope.GET("/", zone.Get)
+	zoneScope.POST("", zone.Create)
+	zoneScope.GET("", zone.Get)
 	zoneScope.GET("/:id", zone.GetById)
 	zoneScope.DELETE("/:id", zone.Delete)
 	zoneScope.PATCH("/:id", zone.Patch)
+
+	serviceScope := api.Group("/service")
+
+	serviceScope.POST("", service.Create)
+	serviceScope.GET("", service.Get)
+	serviceScope.GET("/:id", service.GetById)
+	serviceScope.DELETE("/:id", service.Delete)
+	serviceScope.PATCH("/:id", service.Patch)
 	return r
 }
 

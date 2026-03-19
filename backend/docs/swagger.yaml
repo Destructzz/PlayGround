@@ -1,5 +1,29 @@
 basePath: /
 definitions:
+  domain.CreateServiceRequest:
+    properties:
+      currency:
+        type: string
+      description:
+        type: string
+      duration:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price:
+        type: string
+      zone_id:
+        type: integer
+    required:
+    - currency
+    - description
+    - duration
+    - name
+    - price
+    - zone_id
+    type: object
   domain.CreateZoneRequest:
     properties:
       capacity:
@@ -46,6 +70,23 @@ definitions:
         - lounge
         - sys
     type: object
+  domain.UpdateServiceRequest:
+    properties:
+      currency:
+        type: string
+      description:
+        type: string
+      duration:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price:
+        type: string
+      zone_id:
+        type: integer
+    type: object
   response.AuthResponse:
     properties:
       request_id:
@@ -70,6 +111,18 @@ definitions:
         type: string
       provider:
         example: google
+        type: string
+    type: object
+  response.DeleteServiceResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
   response.DeleteZoneResponse:
@@ -120,6 +173,63 @@ definitions:
       request_id:
         example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
         type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ServiceDoc:
+    properties:
+      created_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      currency:
+        example: USD
+        type: string
+      description:
+        example: 1 hour of VIP PS5
+        type: string
+      duration:
+        example: 60
+        type: integer
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: VIP Gaming
+        type: string
+      price:
+        example: "15.00"
+        type: string
+      updated_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      zone_id:
+        example: 1
+        type: integer
+    type: object
+  response.ServiceListResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      services:
+        items:
+          $ref: '#/definitions/response.ServiceDoc'
+        type: array
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ServiceResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      service:
+        $ref: '#/definitions/response.ServiceDoc'
       timestamp:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
@@ -274,6 +384,154 @@ paths:
       summary: Pong
       tags:
       - health
+  /api/v1/service:
+    get:
+      description: Returns all services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ServiceListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List services
+      tags:
+      - services
+    post:
+      consumes:
+      - application/json
+      description: Creates a service from JSON payload
+      parameters:
+      - description: Service payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ServiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create service
+      tags:
+      - services
+  /api/v1/service/{id}:
+    delete:
+      description: Deletes service by id
+      parameters:
+      - description: Service ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DeleteServiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete service
+      tags:
+      - services
+    get:
+      description: Returns service id from path param
+      parameters:
+      - description: Service ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ServiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get service by id
+      tags:
+      - services
+    patch:
+      consumes:
+      - application/json
+      description: Partially updates service fields by id
+      parameters:
+      - description: Service ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Service patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.ServiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch service
+      tags:
+      - services
   /api/v1/zone:
     get:
       description: Returns all zones

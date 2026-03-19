@@ -12,8 +12,8 @@ import (
 )
 
 const createZone = `-- name: CreateZone :one
-INSERT INTO zones (name, zone_type, capacity, description)
-VALUES ($1, $2, $3, $4)
+INSERT INTO zones (name, zone_type, capacity, description, is_active)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, name, zone_type, capacity, description, is_active, created_at, updated_at
 `
 
@@ -22,6 +22,7 @@ type CreateZoneParams struct {
 	ZoneType    ZoneType    `json:"zone_type"`
 	Capacity    int32       `json:"capacity"`
 	Description pgtype.Text `json:"description"`
+	IsActive    bool        `json:"is_active"`
 }
 
 func (q *Queries) CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, error) {
@@ -30,6 +31,7 @@ func (q *Queries) CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, e
 		arg.ZoneType,
 		arg.Capacity,
 		arg.Description,
+		arg.IsActive,
 	)
 	var i Zone
 	err := row.Scan(

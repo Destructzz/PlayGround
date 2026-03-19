@@ -128,6 +128,228 @@
                 }
             }
         },
+        "/api/v1/service": {
+            "get": {
+                "description": "Returns all services",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "List services",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ServiceListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a service from JSON payload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "Create service",
+                "parameters": [
+                    {
+                        "description": "Service payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateServiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ServiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/service/{id}": {
+            "get": {
+                "description": "Returns service id from path param",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "Get service by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Service ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ServiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes service by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "Delete service",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Service ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DeleteServiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Partially updates service fields by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "services"
+                ],
+                "summary": "Patch service",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Service ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Service patch payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateServiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.ServiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/zone": {
             "get": {
                 "description": "Returns all zones",
@@ -386,6 +608,40 @@
         }
     },
     "definitions": {
+        "domain.CreateServiceRequest": {
+            "type": "object",
+            "required": [
+                "currency",
+                "description",
+                "duration",
+                "name",
+                "price",
+                "zone_id"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "domain.CreateZoneRequest": {
             "type": "object",
             "required": [
@@ -455,6 +711,32 @@
                 }
             }
         },
+        "domain.UpdateServiceRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.AuthResponse": {
             "type": "object",
             "properties": {
@@ -489,6 +771,23 @@
                 "provider": {
                     "type": "string",
                     "example": "google"
+                }
+            }
+        },
+        "response.DeleteServiceResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
                 }
             }
         },
@@ -558,6 +857,86 @@
                 "request_id": {
                     "type": "string",
                     "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.ServiceDoc": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "1 hour of VIP PS5"
+                },
+                "duration": {
+                    "type": "integer",
+                    "example": 60
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "VIP Gaming"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "15.00"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "zone_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "response.ServiceListResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ServiceDoc"
+                    }
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.ServiceResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "service": {
+                    "$ref": "#/definitions/response.ServiceDoc"
                 },
                 "timestamp": {
                     "type": "string",

@@ -1,6 +1,6 @@
 -- name: CreateZone :one
-INSERT INTO zones (name, zone_type, capacity, description)
-VALUES ($1, $2, $3, $4)
+INSERT INTO zones (name, zone_type, capacity, description, is_active)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, name, zone_type, capacity, description, is_active, created_at, updated_at;
 
 -- name: ListZones :many
