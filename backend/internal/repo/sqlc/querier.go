@@ -9,18 +9,24 @@ import (
 )
 
 type Querier interface {
+	CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error)
 	CreatePing(ctx context.Context, content string) (Ping, error)
 	CreateService(ctx context.Context, arg CreateServiceParams) (Service, error)
 	CreateZone(ctx context.Context, arg CreateZoneParams) (Zone, error)
+	DeleteBooking(ctx context.Context, id int64) (int64, error)
 	DeleteService(ctx context.Context, id int64) (int64, error)
 	DeleteZone(ctx context.Context, id int64) (int64, error)
+	GetBookingByID(ctx context.Context, id int64) (Booking, error)
 	GetServiceByID(ctx context.Context, id int64) (Service, error)
 	GetZoneByID(ctx context.Context, id int64) (Zone, error)
+	ListBookings(ctx context.Context) ([]Booking, error)
 	ListPings(ctx context.Context) ([]Ping, error)
 	ListServices(ctx context.Context) ([]Service, error)
 	ListZones(ctx context.Context) ([]Zone, error)
+	PatchBooking(ctx context.Context, arg PatchBookingParams) (Booking, error)
 	PatchService(ctx context.Context, arg PatchServiceParams) (Service, error)
 	PatchZone(ctx context.Context, arg PatchZoneParams) (Zone, error)
+	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

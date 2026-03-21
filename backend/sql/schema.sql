@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     google_id VARCHAR,
     full_name TEXT NOT NULL,
-    email VARCHAR NOT NULL,
+    email VARCHAR NOT NULL UNIQUE,
     avatar_url VARCHAR,
     phone VARCHAR,
     role role NOT NULL,

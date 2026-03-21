@@ -15,6 +15,7 @@ import (
 // NewRouter configures Gin engine, middleware and routes.
 func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engine {
 	setGinMode(env)
+	gin.EnableJsonDecoderDisallowUnknownFields()
 
 	r := gin.New()
 	r.Use(
@@ -28,11 +29,14 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	r.StaticFile("/openapi.json", "./docs/swagger.json")
 
 	health := handlers.NewHealth(pool)
-	auth := handlers.NewAuth()
+	userService := service.NewUserService(queries)
+	auth := handlers.NewAuth(userService)
 	zoneService := service.NewZone(queries)
 	zone := handlers.NewZone(zoneService)
 	serviceService := service.NewServiceService(queries)
-	service := handlers.NewService(serviceService)
+	svc := handlers.NewService(serviceService)
+	bookingService := service.NewBooking(queries, serviceService)
+	booking := handlers.NewBooking(bookingService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -53,11 +57,20 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	serviceScope := api.Group("/service")
 
-	serviceScope.POST("", service.Create)
-	serviceScope.GET("", service.Get)
-	serviceScope.GET("/:id", service.GetById)
-	serviceScope.DELETE("/:id", service.Delete)
-	serviceScope.PATCH("/:id", service.Patch)
+	serviceScope.POST("", svc.Create)
+	serviceScope.GET("", svc.Get)
+	serviceScope.GET("/:id", svc.GetById)
+	serviceScope.DELETE("/:id", svc.Delete)
+	serviceScope.PATCH("/:id", svc.Patch)
+
+	bookingScope := api.Group("/booking")
+
+	bookingScope.POST("", booking.Create)
+	bookingScope.GET("", booking.Get)
+	bookingScope.GET("/:id", booking.GetById)
+	bookingScope.DELETE("/:id", booking.Delete)
+	bookingScope.PATCH("/:id", booking.Patch)
+
 	return r
 }
 

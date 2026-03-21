@@ -43,11 +43,12 @@ func (s *Service) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := s.serviceService.CreateService(c, dto)
+	result, err := s.serviceService.CreateService(c.Request.Context(), dto)
 	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
 		response.NewResponseBuilder(
 			response.WithStatus(http.StatusInternalServerError),
-			response.WithError("creation_failed", "Failed to create service", err),
+			response.WithError("creation_failed", "Failed to create service", nil),
 		).JSON(c)
 		return
 	}
@@ -67,7 +68,7 @@ func (s *Service) Create(c *gin.Context) {
 // @Failure     500 {object} response.ErrorResponse
 // @Router      /api/v1/service [get]
 func (s *Service) Get(c *gin.Context) {
-	result, err := s.serviceService.ListServices(c)
+	result, err := s.serviceService.ListServices(c.Request.Context())
 
 	if err != nil {
 		zap.L().Warn("database error", zap.Error(err))
@@ -117,7 +118,7 @@ func (s *Service) GetById(c *gin.Context) {
 		return
 	}
 
-	service, err := s.serviceService.GetServiceByID(c, id)
+	service, err := s.serviceService.GetServiceByID(c.Request.Context(), id)
 
 	if err != nil{
 		if errors.Is(err, pgx.ErrNoRows){
@@ -186,7 +187,7 @@ func (s *Service) Patch(c *gin.Context){
 		return
 	}
 
-	result, err := s.serviceService.UpdateService(c, id, dto)
+	result, err := s.serviceService.UpdateService(c.Request.Context(), id, dto)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
 			zap.L().Warn("incorrect id", zap.Error(err))
@@ -196,9 +197,10 @@ func (s *Service) Patch(c *gin.Context){
 			).JSON(c)
 			return
 		}
+		zap.L().Warn("database error", zap.Error(err))
 		response.NewResponseBuilder(
 			response.WithStatus(http.StatusInternalServerError),
-			response.WithError("creation_failed", "Failed to create service", err),
+			response.WithError("update_failed", "Failed to update service", nil),
 		).JSON(c)
 		return
 	}
@@ -241,7 +243,7 @@ func (s *Service) Delete(c *gin.Context){
 		return
 	}
 
-	result, err := s.serviceService.DeleteService(c, id)
+	result, err := s.serviceService.DeleteService(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
 			zap.L().Warn("incorrect id", zap.Error(err))
@@ -261,7 +263,7 @@ func (s *Service) Delete(c *gin.Context){
 
 	response.NewResponseBuilder(
 		response.WithStatus(http.StatusOK),
-		response.WithData("service", result),
+		response.WithData("id", result),
 	).JSON(c)
 }
 

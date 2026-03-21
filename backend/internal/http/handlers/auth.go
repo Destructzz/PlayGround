@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"backend/internal/domain"
 	"backend/internal/http/middleware"
 	"backend/internal/http/response"
+	"backend/internal/service"
+	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +13,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type Auth struct{}
+type Auth struct {
+	userService *service.UserService
+}
 
-func NewAuth() *Auth {
-	return &Auth{}
+func NewAuth(userService *service.UserService) *Auth {
+	return &Auth{userService: userService}
 }
 
 // Begin starts OAuth flow for the given provider.
@@ -64,12 +69,32 @@ func (a *Auth) Callback(c *gin.Context) {
 		return
 	}
 
+	req := domain.UpsertUserRequest{
+		GoogleID:  user.UserID,
+		FullName:  user.Name,
+		Email:     user.Email,
+		AvatarURL: user.AvatarURL,
+	}
+
+	dbUser, err := a.userService.UpsertUser(c.Request.Context(), req)
+	if err != nil {
+		zap.L().Warn("failed to upsert user", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("db_error", "Failed to save user", nil),
+		).JSON(c)
+		return
+	}
+
+	zap.L().Info("user_uuid", zap.String("uuid", dbUser.ID.String()))
+
 	response.NewResponseBuilder(
 		response.WithData("user", response.AuthUserResponse{
-			Email:     user.Email,
-			AvatarURL: user.AvatarURL,
-			Name:      user.Name,
-			Provider:  user.Provider,
+			ID:        dbUser.ID.String(),
+			Email:     dbUser.Email,
+			AvatarURL: dbUser.AvatarUrl.String,
+			Name:      dbUser.FullName,
+			Provider:  provider,
 		}),
 	).JSON(c)
 }
