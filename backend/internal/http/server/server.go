@@ -35,8 +35,12 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	zone := handlers.NewZone(zoneService)
 	serviceService := service.NewServiceService(queries)
 	svc := handlers.NewService(serviceService)
-	bookingService := service.NewBooking(queries, serviceService)
+	bookingService := service.NewBooking(queries)
 	booking := handlers.NewBooking(bookingService)
+	staffService := service.NewStaff(queries)
+	staff := handlers.NewStaff(staffService)
+	paymentService := service.NewPayment(queries)
+	payment := handlers.NewPayment(paymentService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -46,6 +50,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	api.GET("/auth/:provider/callback", auth.Callback)
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
+	api.GET("/user", auth.ListUsers)
 
 	zoneScope := api.Group("/zone")
 
@@ -70,6 +75,22 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	bookingScope.GET("/:id", booking.GetById)
 	bookingScope.DELETE("/:id", booking.Delete)
 	bookingScope.PATCH("/:id", booking.Patch)
+
+	staffScope := api.Group("/staff")
+
+	staffScope.POST("", staff.Create)
+	staffScope.GET("", staff.Get)
+	staffScope.GET("/:id", staff.GetById)
+	staffScope.DELETE("/:id", staff.Delete)
+	staffScope.PATCH("/:id", staff.Patch)
+
+	paymentScope := api.Group("/payment")
+
+	paymentScope.POST("", payment.Create)
+	paymentScope.GET("", payment.Get)
+	paymentScope.GET("/:id", payment.GetById)
+	paymentScope.DELETE("/:id", payment.Delete)
+	paymentScope.PATCH("/:id", payment.Patch)
 
 	return r
 }

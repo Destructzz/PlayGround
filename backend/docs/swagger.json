@@ -310,6 +310,228 @@
                 }
             }
         },
+        "/api/v1/payment": {
+            "get": {
+                "description": "Returns all payments",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "List payments",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.PaymentListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a payment from JSON payload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Create payment",
+                "parameters": [
+                    {
+                        "description": "Payment payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.PaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/{id}": {
+            "get": {
+                "description": "Returns payment by id from path param",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Get payment by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.PaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes payment by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Delete payment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DeletePaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Partially updates payment fields by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Patch payment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment patch payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.PatchPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.PaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/ping": {
             "get": {
                 "description": "Returns pong with timestamp",
@@ -561,6 +783,255 @@
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/staff": {
+            "get": {
+                "description": "Returns all staff members",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "staff"
+                ],
+                "summary": "List staff",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.StaffListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a staff member from JSON payload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "staff"
+                ],
+                "summary": "Create staff",
+                "parameters": [
+                    {
+                        "description": "Staff payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateStaffRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.StaffResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/staff/{id}": {
+            "get": {
+                "description": "Returns staff member by id from path param",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "staff"
+                ],
+                "summary": "Get staff by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Staff ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.StaffResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Soft-deletes staff member by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "staff"
+                ],
+                "summary": "Delete staff",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Staff ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DeleteStaffResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Partially updates staff fields by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "staff"
+                ],
+                "summary": "Patch staff",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Staff ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Staff patch payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.PatchStaffRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.StaffResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user": {
+            "get": {
+                "description": "Returns all active users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -838,7 +1309,6 @@
                 "service_id",
                 "start_time",
                 "status",
-                "total_price",
                 "user_id",
                 "zone_id"
             ],
@@ -869,14 +1339,62 @@
                         }
                     ]
                 },
-                "total_price": {
-                    "type": "string"
-                },
                 "user_id": {
                     "type": "string"
                 },
                 "zone_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "domain.CreatePaymentRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "booking_id",
+                "currency",
+                "payment_method"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "booking_id": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "enum": [
+                        "cash",
+                        "card",
+                        "online"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PaymentMethod"
+                        }
+                    ]
+                },
+                "receipt_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "enum": [
+                        "pending",
+                        "paid",
+                        "failed",
+                        "refunded"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PaymentStatus"
+                        }
+                    ]
                 }
             }
         },
@@ -911,6 +1429,44 @@
                 },
                 "zone_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "domain.CreateStaffRequest": {
+            "type": "object",
+            "required": [
+                "hire_date",
+                "position",
+                "user_id"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "hire_date": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "position": {
+                    "enum": [
+                        "admin",
+                        "seller",
+                        "operator",
+                        "tech"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PositionType"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -980,14 +1536,86 @@
                         }
                     ]
                 },
-                "total_price": {
-                    "type": "string"
-                },
                 "user_id": {
                     "type": "string"
                 },
                 "zone_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "domain.PatchPaymentRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "booking_id": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "enum": [
+                        "cash",
+                        "card",
+                        "online"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PaymentMethod"
+                        }
+                    ]
+                },
+                "receipt_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "enum": [
+                        "pending",
+                        "paid",
+                        "failed",
+                        "refunded"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PaymentStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "domain.PatchStaffRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "hire_date": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "position": {
+                    "enum": [
+                        "admin",
+                        "seller",
+                        "operator",
+                        "tech"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sqlc.PositionType"
+                        }
+                    ]
                 }
             }
         },
@@ -1191,7 +1819,41 @@
                 }
             }
         },
+        "response.DeletePaymentResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
         "response.DeleteServiceResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.DeleteStaffResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1281,6 +1943,86 @@
                 }
             }
         },
+        "response.PaymentDoc": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "1500.00"
+                },
+                "booking_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "RUB"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "paid_at": {
+                    "type": "string",
+                    "example": "2026-03-22T15:00:00Z"
+                },
+                "payment_method": {
+                    "type": "string",
+                    "example": "card"
+                },
+                "receipt_number": {
+                    "type": "string",
+                    "example": "RCP-001"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.PaymentListResponse": {
+            "type": "object",
+            "properties": {
+                "payments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.PaymentDoc"
+                    }
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.PaymentResponse": {
+            "type": "object",
+            "properties": {
+                "payment": {
+                    "$ref": "#/definitions/response.PaymentDoc"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
         "response.ServiceDoc": {
             "type": "object",
             "properties": {
@@ -1354,6 +2096,82 @@
                 },
                 "service": {
                     "$ref": "#/definitions/response.ServiceDoc"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.StaffDoc": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "staff@example.com"
+                },
+                "hire_date": {
+                    "type": "string",
+                    "example": "2026-01-15"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+79001234567"
+                },
+                "position": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "response.StaffListResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "staff": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.StaffDoc"
+                    }
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.StaffResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "staff": {
+                    "$ref": "#/definitions/response.StaffDoc"
                 },
                 "timestamp": {
                     "type": "string",
@@ -1446,6 +2264,49 @@
                 "BookingStatusConfirmed",
                 "BookingStatusCanceled",
                 "BookingStatusCompleted"
+            ]
+        },
+        "sqlc.PaymentMethod": {
+            "type": "string",
+            "enum": [
+                "cash",
+                "card",
+                "online"
+            ],
+            "x-enum-varnames": [
+                "PaymentMethodCash",
+                "PaymentMethodCard",
+                "PaymentMethodOnline"
+            ]
+        },
+        "sqlc.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "PaymentStatusPending",
+                "PaymentStatusPaid",
+                "PaymentStatusFailed",
+                "PaymentStatusRefunded"
+            ]
+        },
+        "sqlc.PositionType": {
+            "type": "string",
+            "enum": [
+                "admin",
+                "seller",
+                "operator",
+                "tech"
+            ],
+            "x-enum-varnames": [
+                "PositionTypeAdmin",
+                "PositionTypeSeller",
+                "PositionTypeOperator",
+                "PositionTypeTech"
             ]
         },
         "sqlc.ZoneType": {

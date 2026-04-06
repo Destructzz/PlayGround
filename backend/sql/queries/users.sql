@@ -7,3 +7,9 @@ SET google_id = EXCLUDED.google_id,
     avatar_url = EXCLUDED.avatar_url,
     updated_at = NOW()
 RETURNING id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at;
+
+-- name: ListUsers :many
+SELECT id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+FROM users
+WHERE deleted_at IS NULL
+ORDER BY full_name;

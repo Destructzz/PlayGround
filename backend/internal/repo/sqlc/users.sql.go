@@ -11,6 +11,45 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const listUsers = `-- name: ListUsers :many
+SELECT id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+FROM users
+WHERE deleted_at IS NULL
+ORDER BY full_name
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.GoogleID,
+			&i.FullName,
+			&i.Email,
+			&i.AvatarUrl,
+			&i.Phone,
+			&i.Role,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertUser = `-- name: UpsertUser :one
 INSERT INTO users (google_id, full_name, email, avatar_url, role)
 VALUES ($1, $2, $3, $4, 'client')

@@ -12,11 +12,10 @@ import (
 
 type BookingService struct {
 	queries *sqlc.Queries
-	serviceService *ServiceService
 }
 
-func NewBooking(queries *sqlc.Queries, serviceService *ServiceService) *BookingService {
-	return &BookingService{queries: queries, serviceService: serviceService}
+func NewBooking(queries *sqlc.Queries) *BookingService {
+	return &BookingService{queries: queries}
 }
 
 func (b *BookingService) CreateBooking(ctx context.Context, dto domain.CreateBookingRequest) (sqlc.Booking, error) {

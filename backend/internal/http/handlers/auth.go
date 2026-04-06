@@ -99,6 +99,30 @@ func (a *Auth) Callback(c *gin.Context) {
 	).JSON(c)
 }
 
+// ListUsers возвращает список пользователей.
+// @Summary     List users
+// @Description Returns all active users
+// @Tags        users
+// @Produce     json
+// @Success     200 {object} map[string]interface{}
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/user [get]
+func (a *Auth) ListUsers(c *gin.Context) {
+	users, err := a.userService.ListUsers(c.Request.Context())
+	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
+		return
+	}
+
+	response.NewResponseBuilder(
+		response.WithData("users", users),
+	).JSON(c)
+}
+
 func ensureProvider(c *gin.Context) (string, bool) {
 	provider := c.Param("provider")
 	if provider == "" {

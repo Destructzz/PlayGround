@@ -31,3 +31,7 @@ func (s *UserService) UpsertUser(ctx context.Context, req domain.UpsertUserReque
 		},
 	})
 }
+
+func (s *UserService) ListUsers(ctx context.Context) ([]sqlc.User, error) {
+	return s.queries.ListUsers(ctx)
+}
