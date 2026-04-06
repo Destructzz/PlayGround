@@ -1,22 +1,28 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  app: {
-    head: {
-      htmlAttrs: { lang: 'ru' }
-    }
+  modules: [
+    '@nuxt/eslint',
+    '@nuxt/ui'
+  ],
+
+  devtools: {
+    enabled: true
   },
-  devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
-  css: ['@/assets/css/tailwind.css'],
-  runtimeConfig: {
-    public: {
-      apiBase: '/api/v1'
-    }
-  },
+
+  css: ['~/assets/css/main.css'],
+
   routeRules: {
-    '/api/**': {
-      proxy: 'http://localhost:8080/api/**'
+    '/': { prerender: true }
+  },
+
+  compatibilityDate: '2025-01-15',
+
+  eslint: {
+    config: {
+      stylistic: {
+        commaDangle: 'never',
+        braceStyle: '1tbs'
+      }
     }
   }
 })
