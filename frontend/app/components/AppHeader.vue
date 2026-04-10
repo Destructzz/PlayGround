@@ -5,8 +5,8 @@
       <!-- Логотип -->
       <div class="flex items-center">
         <NuxtLink to="/" class="flex items-center font-black text-[26px] tracking-tighter transition-transform hover:scale-105">
-          <span class="text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]">Play</span>
-          <span class="text-cyan-300 drop-shadow-[0_0_18px_rgba(103,232,249,0.9)]">Ground</span>
+          <span class="text-white">Play</span>
+          <span class="text-cyan-300">Ground</span>
         </NuxtLink>
       </div>
       
@@ -20,7 +20,7 @@
       <!-- Кнопки действий -->
       <div class="flex items-center gap-4">
         <NuxtLink to="/login" class="text-sm font-semibold text-cyan-100/60 hover:text-white hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.4)] transition-all hidden sm:block">Войти</NuxtLink>
-        <button class="bg-cyan-400 hover:bg-cyan-300 text-[#020c13] text-sm font-bold px-6 py-2 rounded-full transition-all shadow-[0_0_15px_rgba(34,211,238,0.5)] hover:shadow-[0_0_20px_rgba(34,211,238,0.8)] active:scale-95">Регистрация</button>
+        <button class="bg-cyan-400 hover:bg-cyan-300 text-[#020c13] text-sm font-bold px-6 py-2 rounded-full transition-all active:scale-95">Регистрация</button>
       </div>
       
     </div>
