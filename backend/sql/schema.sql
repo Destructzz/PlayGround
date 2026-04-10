@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TYPE role AS ENUM ('admin', 'seller', 'client');
-CREATE TYPE zone_type AS ENUM ('game', 'event', 'vip', 'lounge', 'sys');
+CREATE TYPE zone_type AS ENUM ('game', 'event', 'lounge', 'sys');
 CREATE TYPE booking_status AS ENUM ('created', 'confirmed', 'canceled', 'completed');
 CREATE TYPE position_type AS ENUM ('admin', 'seller', 'operator', 'tech');
 CREATE TYPE payment_method AS ENUM ('cash', 'card', 'online');
@@ -23,10 +23,18 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS zone_tags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS zones (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE,
     zone_type zone_type NOT NULL,
+    zone_tag_id int NOT NULL REFERENCES zone_tags(id) ON DELETE CASCADE,
     capacity INTEGER NOT NULL,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -102,4 +110,17 @@ CREATE TABLE IF NOT EXISTS pings (
     id BIGSERIAL PRIMARY KEY,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS computer_configurations(
+    id BIGSERIAL PRIMARY KEY,
+    zone_tags_id BIGINT NOT NULL REFERENCES zone_tags(id) ON DELETE CASCADE,
+    specs_json JSONB NOT NULL DEFAULT '[]'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS site_settings(
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), -- Singleton table (только 1 строка всегда)
+    settings_json JSONB NOT NULL DEFAULT '[]'::jsonb, -- ID фич или их массив для отображения
+    gallery_items_json JSONB NOT NULL DEFAULT '[]'::jsonb, -- То, что каруселится внизу
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
