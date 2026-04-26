@@ -1,11 +1,23 @@
 <template>
   <div class="min-h-screen bg-[#020c13] text-white pt-24 pb-32 transition-colors duration-1000">
-    
     <div class="max-w-[1400px] mx-auto px-6 sm:px-12 flex flex-col gap-12">
       <!-- Навигация обратно -->
       <div>
-        <NuxtLink to="/" class="dynamic-text hover:opacity-75 transition-opacity flex items-center gap-2 w-fit">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <NuxtLink
+          to="/"
+          class="dynamic-text hover:opacity-75 transition-opacity flex items-center gap-2 w-fit"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ><path d="m15 18-6-6 6-6" /></svg>
           На главную
         </NuxtLink>
       </div>
@@ -41,20 +53,24 @@
     </div>
 
     <div class="max-w-[1400px] mx-auto px-6 sm:px-12 flex flex-col">
-      
       <!-- Селектор Вкладок (С плавным перетеканием ползунка) -->
       <section class="mb-12 flex justify-center w-full px-4">
         <div class="bg-zinc-900/60 backdrop-blur-md p-2 rounded-full border border-white/10 shadow-xl w-full max-w-2xl">
           <div class="relative grid grid-cols-3 w-full">
             <!-- Плывущий активный задний фон (ползунок) -->
-            <div class="absolute top-0 bottom-0 w-[33.333%] rounded-full z-0 dynamic-bg dynamic-glow transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                 :style="{ transform: `translateX(${activeClass * 100}%)` }">
-            </div>
+            <div
+              class="absolute top-0 bottom-0 w-[33.333%] rounded-full z-0 dynamic-bg dynamic-glow transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+              :style="{ transform: `translateX(${activeClass * 100}%)` }"
+            />
 
             <!-- Кнопки -->
-            <button v-for="(cls, index) in classDataList" :key="'btn-'+index" @click="activeClass = index"
-              :class="['relative z-10 py-3.5 text-center rounded-full font-bold text-sm sm:text-base transition-colors duration-500', 
-                       activeClass === index ? 'text-black' : 'text-zinc-400 hover:text-white']">
+            <button
+              v-for="(cls, index) in classDataList"
+              :key="'btn-'+index"
+              :class="['relative z-10 py-3.5 text-center rounded-full font-bold text-sm sm:text-base transition-colors duration-500',
+                       activeClass === index ? 'text-black' : 'text-zinc-400 hover:text-white']"
+              @click="activeClass = index"
+            >
               {{ cls.name }}
             </button>
           </div>
@@ -63,113 +79,183 @@
 
       <!-- Плавная анимация смены контента -->
       <div class="min-h-[500px]">
-         <transition name="smooth-slide" mode="out-in">
-           <!-- Используем :key чтобы Vue знал, когда нужно перерисовывать элемент с анимацией -->
-           <div :key="activeClass" v-if="currentClassData" class="flex flex-col lg:flex-row gap-12 lg:gap-24 items-center">
-             
-             <!-- Левый бокс -->
-             <div class="w-full lg:w-1/2 bg-[#0a192f] border-l-4 dynamic-border p-10 flex flex-col justify-center relative overflow-hidden dynamic-shadow-box rounded-r-2xl transform transition-all duration-700">
-               <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-[80px] pointer-events-none dynamic-bg opacity-30 transition-all duration-700"></div>
-               <h2 class="text-4xl sm:text-5xl font-black uppercase mb-6 tracking-tighter text-white">
-                 <span class="block">{{ currentClassData.prefix }}</span>
-                 <span class="block">{{ currentClassData.title }}</span>
-               </h2>
-               <p class="text-zinc-300 text-lg relative z-10 leading-relaxed font-medium">
-                 {{ currentClassData.desc }}
-               </p>
-             </div>
+        <transition
+          name="smooth-slide"
+          mode="out-in"
+        >
+          <!-- Используем :key чтобы Vue знал, когда нужно перерисовывать элемент с анимацией -->
+          <div
+            v-if="currentClassData"
+            :key="activeClass"
+            class="flex flex-col lg:flex-row gap-12 lg:gap-24 items-center"
+          >
+            <!-- Левый бокс -->
+            <div class="w-full lg:w-1/2 bg-[#0a192f] border-l-4 dynamic-border p-10 flex flex-col justify-center relative overflow-hidden dynamic-shadow-box rounded-r-2xl transform transition-all duration-700">
+              <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-[80px] pointer-events-none dynamic-bg opacity-30 transition-all duration-700" />
+              <h2 class="text-4xl sm:text-5xl font-black uppercase mb-6 tracking-tighter text-white">
+                <span class="block">{{ currentClassData.prefix }}</span>
+                <span class="block">{{ currentClassData.title }}</span>
+              </h2>
+              <p class="text-zinc-300 text-lg relative z-10 leading-relaxed font-medium">
+                {{ currentClassData.desc }}
+              </p>
+            </div>
 
-             <!-- Правые линии текста (Specs) -->
-             <div class="w-full lg:w-1/2 flex flex-col gap-4">
-               <div v-for="(spec, i) in currentClassData.specs" :key="tempKey + i" 
-                    class="flex justify-between items-center py-4 border-b border-zinc-800 transition-all duration-300 group cursor-default dynamic-border-hover relative overflow-hidden">
-                 <div class="absolute inset-0 opacity-0 group-hover:opacity-10 dynamic-bg transition-opacity duration-300 -z-10"></div>
-                 <span class="text-xl font-medium text-zinc-300 group-hover:text-white transition-colors">{{ spec.title }}</span>
-                 <span class="font-mono tracking-wider dynamic-text transition-colors duration-700">{{ spec.value }}</span>
-               </div>
-             </div>
-
-           </div>
-         </transition>
+            <!-- Правые линии текста (Specs) -->
+            <div class="w-full lg:w-1/2 flex flex-col gap-4">
+              <div
+                v-for="(spec, i) in currentClassData.specs"
+                :key="tempKey + i"
+                class="flex justify-between items-center py-4 border-b border-zinc-800 transition-all duration-300 group cursor-default dynamic-border-hover relative overflow-hidden"
+              >
+                <div class="absolute inset-0 opacity-0 group-hover:opacity-10 dynamic-bg transition-opacity duration-300 -z-10" />
+                <span class="text-xl font-medium text-zinc-300 group-hover:text-white transition-colors">{{ spec.title }}</span>
+                <span class="font-mono tracking-wider dynamic-text transition-colors duration-700">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
 
       <!-- Pricing comparison bar -->
       <section class="mt-20">
         <div class="bg-zinc-950/60 border border-white/5 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div v-for="(tier, i) in pricingTiers" :key="'tier'+i" class="flex-1 text-center">
-            <p class="text-zinc-500 text-xs uppercase tracking-widest mb-2">{{ tier.name }}</p>
-            <p class="text-3xl font-black text-white">{{ tier.price }}<span class="text-zinc-500 text-lg font-medium">/час</span></p>
-            <p class="text-zinc-600 text-xs mt-1">{{ tier.note }}</p>
+          <div
+            v-for="(tier, i) in pricingTiers"
+            :key="'tier'+i"
+            class="flex-1 text-center"
+          >
+            <p class="text-zinc-500 text-xs uppercase tracking-widest mb-2">
+              {{ tier.name }}
+            </p>
+            <p class="text-3xl font-black text-white">
+              {{ tier.price }}<span class="text-zinc-500 text-lg font-medium">/час</span>
+            </p>
+            <p class="text-zinc-600 text-xs mt-1">
+              {{ tier.note }}
+            </p>
           </div>
-          <div class="hidden md:block w-[1px] h-16 bg-zinc-800" v-for="i in 2" :key="'div'+i"></div>
+          <div
+            v-for="i in 2"
+            :key="'div'+i"
+            class="hidden md:block w-[1px] h-16 bg-zinc-800"
+          />
         </div>
       </section>
 
       <!-- ====== BOOKING PANEL ====== -->
       <div class="mt-16">
         <div class="text-center mb-6">
-          <h2 class="text-3xl font-bold text-white">Бронирование</h2>
-          <p class="text-zinc-500 mt-2">Выбери зону, место и время</p>
+          <h2 class="text-3xl font-bold text-white">
+            Бронирование
+          </h2>
+          <p class="text-zinc-500 mt-2">
+            Выбери зону, место и время
+          </p>
         </div>
       </div>
 
       <section class="relative mt-16">
-        
         <div class="flex justify-center mb-6">
-          <button @click="panels.v1 = !panels.v1" 
+          <button
             class="px-10 py-4 rounded-2xl font-bold text-lg border-2 transition-all duration-500 relative overflow-hidden group"
-            :class="panels.v1 ? 'bg-white text-black border-white' : 'border-zinc-700 text-white hover:border-zinc-400'">
+            :class="panels.v1 ? 'bg-white text-black border-white' : 'border-zinc-700 text-white hover:border-zinc-400'"
+            @click="panels.v1 = !panels.v1"
+          >
             <span class="relative z-10">{{ panels.v1 ? 'Закрыть' : 'Забронировать место' }}</span>
-            <div class="absolute inset-0 bg-gradient-to-r dynamic-bg opacity-0 group-hover:opacity-20 transition-opacity"></div>
+            <div class="absolute inset-0 bg-gradient-to-r dynamic-bg opacity-0 group-hover:opacity-20 transition-opacity" />
           </button>
         </div>
 
         <transition name="slide-down">
-          <div v-if="panels.v1" class="bg-zinc-950/70 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+          <div
+            v-if="panels.v1"
+            class="bg-zinc-950/70 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+          >
             <!-- Date Selector -->
-            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Выберите дату</p>
+            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
+              Выберите дату
+            </p>
             <div class="flex gap-2 overflow-x-auto pb-4 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-              <button v-for="(date, d) in dates" :key="'date'+d" @click="selectedDate = d"
+              <button
+                v-for="(date, d) in dates"
+                :key="'date'+d"
                 :class="['flex-shrink-0 px-4 py-3 rounded-xl border flex flex-col items-center justify-center transition-all duration-300 min-w-[76px]',
-                  selectedDate === d ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']">
+                         selectedDate === d ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']"
+                @click="selectedDate = d"
+              >
                 <span class="text-[10px] uppercase font-bold opacity-80 mb-0.5">{{ date.label }}</span>
                 <span class="font-black text-sm">{{ date.date }}</span>
               </button>
             </div>
 
             <!-- Area Selector -->
-            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Выберите зону</p>
+            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
+              Выберите зону
+            </p>
             <div class="flex gap-3 mb-8 flex-wrap">
-              <button v-for="(zone, i) in zones" :key="'v1z'+i" @click="selectedZone = i"
+              <button
+                v-for="(zone, i) in zones"
+                :key="'v1z'+i"
                 :class="['px-6 py-3 rounded-xl font-bold text-sm border transition-all duration-300',
-                  selectedZone === i ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']">
+                         selectedZone === i ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']"
+                @click="selectedZone = i"
+              >
                 {{ zone.name }}
               </button>
             </div>
             <!-- Places Grid -->
-            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Выберите место</p>
+            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
+              Выберите место
+            </p>
             <div class="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-8">
-              <button v-for="(pc, j) in zones[selectedZone]?.places" :key="'v1p'+j"
-                @click="!pc.booked && (selectedPlace = j)"
+              <button
+                v-for="(pc, j) in zones[selectedZone]?.places"
+                :key="'v1p'+j"
                 :class="['h-12 rounded-lg text-xs font-bold transition-all duration-200 border flex items-center justify-center',
-                  pc.booked ? 'bg-red-950/40 border-red-900/50 text-red-400 cursor-not-allowed' :
-                  selectedPlace === j ? 'dynamic-bg text-black border-transparent scale-110 dynamic-glow' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600']">
+                         pc.booked ? 'bg-red-950/40 border-red-900/50 text-red-400 cursor-not-allowed'
+                         : selectedPlace === j ? 'dynamic-bg text-black border-transparent scale-110 dynamic-glow' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600']"
+                @click="!pc.booked && (selectedPlace = j)"
+              >
                 {{ pc.name }}
               </button>
             </div>
             <!-- Timeline -->
-            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Выберите время</p>
+            <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
+              Выберите время
+            </p>
             <div class="flex overflow-x-auto pb-6 pt-4 px-4 -mx-4 -mt-2">
-              <div v-for="(hour, k) in hours" :key="'v1h'+k" @click="toggleHour(k)"
-                :class="getHourClass(k, hour)">
-                <svg v-if="hour.taken" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div
+                v-for="(hour, k) in hours"
+                :key="'v1h'+k"
+                :class="getHourClass(k, hour)"
+                @click="toggleHour(k)"
+              >
+                <svg
+                  v-if="hour.taken"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><rect
+                  width="18"
+                  height="11"
+                  x="3"
+                  y="11"
+                  rx="2"
+                  ry="2"
+                /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                 <span>{{ hour.time }}</span>
               </div>
             </div>
           </div>
         </transition>
       </section>
-
     </div>
   </div>
 </template>
@@ -245,7 +331,6 @@ const selectedDate = ref(0)
 const selectedZone = ref(0)
 const selectedPlace = ref(-1)
 const selectedHours = ref<number[]>([])
-const wizardStep = ref(1)
 
 const zones = [
   {
@@ -280,7 +365,7 @@ const hours = Array.from({ length: 12 }, (_, i) => ({
 const dates = Array.from({ length: 7 }, (_, i) => {
   const d = new Date()
   d.setDate(d.getDate() + i)
-  
+
   let label: string = ''
   if (i === 0) label = 'Сегодня'
   else if (i === 1) label = 'Завтра'
@@ -288,7 +373,7 @@ const dates = Array.from({ length: 7 }, (_, i) => {
     const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
     label = days[d.getDay()] || ''
   }
-  
+
   return {
     label,
     date: d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
@@ -305,22 +390,22 @@ function toggleHour(index: number) {
   }
 }
 
-function getHourClass(k: number, hour: any) {
+function getHourClass(k: number, hour: (typeof hours)[number]) {
   const isSelected = selectedHours.value.includes(k)
   const isPrevSelected = isSelected && selectedHours.value.includes(k - 1)
   const isNextSelected = isSelected && selectedHours.value.includes(k + 1)
-  
-  let classes = ['flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center text-xs font-bold border cursor-pointer transition-all duration-200 gap-0.5']
-  
+
+  const classes = ['flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center text-xs font-bold border cursor-pointer transition-all duration-200 gap-0.5']
+
   if (isSelected) {
     classes.push('dynamic-bg text-black border-y-transparent dynamic-glow relative z-10')
-    
+
     if (isPrevSelected) {
       classes.push('border-l-transparent rounded-l-none')
     } else {
       classes.push('border-l-transparent rounded-l-xl')
     }
-    
+
     if (isNextSelected) {
       classes.push('border-r-transparent rounded-r-none mr-0')
     } else {
@@ -334,7 +419,7 @@ function getHourClass(k: number, hour: any) {
       classes.push('bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-500 hover:bg-zinc-800')
     }
   }
-  
+
   return classes.join(' ')
 }
 </script>

@@ -8,7 +8,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "smoke": "playwright test"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.100",
@@ -18,6 +19,7 @@
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@nuxt/eslint": "^1.15.2",
     "eslint": "^10.1.0",
     "typescript": "^6.0.2",
