@@ -1,0 +1,18 @@
+Final QA summary for active plan `frontend-continuation`.
+
+Status:
+- `corepack pnpm run lint` -> passed
+- `corepack pnpm run typecheck` -> passed
+- `corepack pnpm run smoke` -> passed
+
+Smoke suite coverage:
+- homepage routes into lounge and event flows
+- lounge flow enforces validation and completes happy path
+- event flow enforces validation and completes happy path
+- error-state fixtures expose reachable submit failures for lounge and event
+
+Evidence files:
+- `.sisyphus/evidence/task-8-smoke-pass.txt`
+- `.sisyphus/evidence/task-8-smoke-failure-path.txt`
+- `.sisyphus/evidence/final-qa/verification-summary.txt`
+- `.sisyphus/evidence/final-qa/playwright-test-results/.last-run.json`

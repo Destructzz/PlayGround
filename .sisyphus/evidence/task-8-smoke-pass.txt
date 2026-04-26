@@ -1,0 +1,25 @@
+Frontend verification evidence for active plan `frontend-continuation`.
+
+Commands executed in `/home/destruct/Projects/Web/PlayGround/frontend` on 2026-04-25:
+
+1. `corepack pnpm run lint`
+   Result: passed
+
+2. `corepack pnpm run typecheck`
+   Result: passed
+   Notes:
+   - Nuxt Icon server bundle mode is set to `local`
+   - Nuxt Icon discovered local-installed 2 collections: lucide, simple-icons
+
+3. `corepack pnpm run smoke`
+   Result: passed
+   Summary:
+   - Running 4 tests using 4 workers
+   - 4 passed (4.0s)
+
+Covered routes and flows:
+- `/` homepage CTA navigation
+- `/lounge` happy path and validation/failure path
+- `/event` happy path and validation/failure path
+- `/lounge?state=error` submit failure path
+- `/event?state=error` submit failure path

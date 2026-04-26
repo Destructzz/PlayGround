@@ -1,0 +1,13 @@
+Failure-path coverage recorded for active plan `frontend-continuation`.
+
+Automated assertions included in `frontend/tests/smoke.spec.ts`:
+
+- Empty-submit validation on `/lounge` renders `lounge-validation-message`
+- Empty-submit validation on `/event` renders `event-validation-message`
+- Forced submit failure on `/lounge?state=error` renders `lounge-submit-error`
+- Forced submit failure on `/event?state=error` renders `event-submit-error`
+
+Execution result:
+- Command: `corepack pnpm run smoke`
+- Status: passed
+- Playwright marker: `frontend/test-results/.last-run.json` => `{ "status": "passed", "failedTests": [] }`
