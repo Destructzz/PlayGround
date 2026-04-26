@@ -15,6 +15,65 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/dev-login": {
+            "post": {
+                "description": "Creates a test user session for QA (non-production only)",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Dev login",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "description": "Clears session cookie and deletes server session",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/session": {
+            "get": {
+                "description": "Returns current authenticated user or signed-out state",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/{provider}": {
             "get": {
                 "description": "Redirects to provider authorization page",
@@ -52,10 +111,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/{provider}/callback": {
             "get": {
-                "description": "Completes OAuth flow and returns user profile",
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Completes OAuth flow and redirects with session cookie",
                 "tags": [
                     "auth"
                 ],
@@ -73,10 +129,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "302": {
+                        "description": "Redirect to frontend",
                         "schema": {
-                            "$ref": "#/definitions/response.AuthResponse"
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -120,7 +176,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a booking from JSON payload",
+                "description": "Creates a booking from JSON payload (user derived from session)",
                 "consumes": [
                     "application/json"
                 ],
@@ -151,6 +207,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -573,6 +641,90 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/event": {
+            "get": {
+                "description": "Returns event zones with services and availability",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Event catalog",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/gaming": {
+            "get": {
+                "description": "Returns gaming zones with places, configurations, and availability",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Gaming catalog",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/home": {
+            "get": {
+                "description": "Returns homepage summaries for gaming/lounge/event",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Home catalog",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/lounge": {
+            "get": {
+                "description": "Returns lounge zones with services and availability",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Lounge catalog",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1314,17 +1466,30 @@ const docTemplate = `{
                 "participants",
                 "service_id",
                 "start_time",
-                "status",
-                "user_id",
                 "zone_id"
             ],
             "properties": {
+                "contact_email": {
+                    "type": "string"
+                },
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "details_json": {
+                    "type": "string"
+                },
                 "end_time": {
                     "type": "string"
                 },
                 "participants": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "place_id": {
+                    "type": "integer"
                 },
                 "service_id": {
                     "type": "integer"
@@ -1344,9 +1509,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/sqlc.BookingStatus"
                         }
                     ]
-                },
-                "user_id": {
-                    "type": "string"
                 },
                 "zone_id": {
                     "type": "integer"
@@ -1481,7 +1643,8 @@ const docTemplate = `{
             "required": [
                 "capacity",
                 "name",
-                "type"
+                "type",
+                "zone_tag_id"
             ],
             "properties": {
                 "capacity": {
@@ -1489,6 +1652,9 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "description": {
+                    "type": "string"
+                },
+                "details_json": {
                     "type": "string"
                 },
                 "is_active": {
@@ -1501,7 +1667,6 @@ const docTemplate = `{
                     "enum": [
                         "game",
                         "event",
-                        "vip",
                         "lounge",
                         "sys"
                     ],
@@ -1510,6 +1675,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/sqlc.ZoneType"
                         }
                     ]
+                },
+                "zone_tag_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1541,9 +1709,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/sqlc.BookingStatus"
                         }
                     ]
-                },
-                "user_id": {
-                    "type": "string"
                 },
                 "zone_id": {
                     "type": "integer"
@@ -1635,6 +1800,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "details_json": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -1645,7 +1813,6 @@ const docTemplate = `{
                     "enum": [
                         "game",
                         "event",
-                        "vip",
                         "lounge",
                         "sys"
                     ],
@@ -1654,6 +1821,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/sqlc.ZoneType"
                         }
                     ]
+                },
+                "zone_tag_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1680,47 +1850,6 @@ const docTemplate = `{
                 },
                 "zone_id": {
                     "type": "integer"
-                }
-            }
-        },
-        "response.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "request_id": {
-                    "type": "string",
-                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
-                },
-                "user": {
-                    "$ref": "#/definitions/response.AuthUserResponse"
-                }
-            }
-        },
-        "response.AuthUserResponse": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://example.com/avatar.jpg"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "user@example.com"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Ada Lovelace"
-                },
-                "provider": {
-                    "type": "string",
-                    "example": "google"
                 }
             }
         },
@@ -2320,14 +2449,12 @@ const docTemplate = `{
             "enum": [
                 "game",
                 "event",
-                "vip",
                 "lounge",
                 "sys"
             ],
             "x-enum-varnames": [
                 "ZoneTypeGame",
                 "ZoneTypeEvent",
-                "ZoneTypeVip",
                 "ZoneTypeLounge",
                 "ZoneTypeSys"
             ]

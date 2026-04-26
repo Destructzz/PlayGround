@@ -18,16 +18,28 @@ func NewZone(queries *sqlc.Queries) *ZoneService {
 }
 
 func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneRequest) (sqlc.Zone, error) {
+	isActive := true
+	if dto.IsActive != nil {
+		isActive = *dto.IsActive
+	}
+	detailsJSON := []byte("{}")
+	if dto.DetailsJSON != "" {
+		detailsJSON = []byte(dto.DetailsJSON)
+	}
+
 	return z.queries.CreateZone(
 		ctx,
 		sqlc.CreateZoneParams{
 			Name:     dto.Name,
 			ZoneType: dto.Type,
+			ZoneTagID: dto.ZoneTagID,
 			Capacity: int32(dto.Capacity),
 			Description: pgtype.Text{
 				String: dto.Description,
 				Valid:  dto.Description != "",
 			},
+			IsActive:    isActive,
+			DetailsJson: detailsJSON,
 		},
 	)
 }
@@ -58,6 +70,12 @@ func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZ
 			Valid:    true,
 		}
 	}
+	if dto.ZoneTagID != nil {
+		params.ZoneTagID = pgtype.Int4{
+			Int32: *dto.ZoneTagID,
+			Valid: true,
+		}
+	}
 	if dto.Capacity != nil {
 		params.Capacity = pgtype.Int4{
 			Int32: int32(*dto.Capacity),
@@ -75,6 +93,9 @@ func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZ
 			Bool:  *dto.IsActive,
 			Valid: true,
 		}
+	}
+	if dto.DetailsJSON != nil {
+		params.DetailsJson = []byte(*dto.DetailsJSON)
 	}
 
 	return z.queries.PatchZone(ctx, params)

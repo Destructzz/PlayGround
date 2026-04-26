@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days'
+);
+
 CREATE TABLE IF NOT EXISTS zone_tags (
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE,
@@ -38,6 +45,7 @@ CREATE TABLE IF NOT EXISTS zones (
     capacity INTEGER NOT NULL,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    details_json JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -51,6 +59,24 @@ CREATE TABLE IF NOT EXISTS services (
     currency VARCHAR NOT NULL DEFAULT 'RUB',
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    details_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS computer_configurations(
+    id BIGSERIAL PRIMARY KEY,
+    zone_tags_id BIGINT NOT NULL REFERENCES zone_tags(id) ON DELETE CASCADE,
+    specs_json JSONB NOT NULL DEFAULT '[]'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS zone_places (
+    id BIGSERIAL PRIMARY KEY,
+    zone_id BIGINT NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
+    label VARCHAR NOT NULL,
+    configuration_id BIGINT REFERENCES computer_configurations(id) ON DELETE SET NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -60,11 +86,16 @@ CREATE TABLE IF NOT EXISTS bookings (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     zone_id BIGINT NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
     service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    place_id BIGINT REFERENCES zone_places(id) ON DELETE SET NULL,
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
     participants INTEGER NOT NULL,
     total_price NUMERIC(10, 2) NOT NULL,
     status booking_status NOT NULL DEFAULT 'created',
+    contact_name VARCHAR NOT NULL DEFAULT '',
+    contact_email VARCHAR NOT NULL DEFAULT '',
+    contact_phone VARCHAR NOT NULL DEFAULT '',
+    details_json JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -110,12 +141,6 @@ CREATE TABLE IF NOT EXISTS pings (
     id BIGSERIAL PRIMARY KEY,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS computer_configurations(
-    id BIGSERIAL PRIMARY KEY,
-    zone_tags_id BIGINT NOT NULL REFERENCES zone_tags(id) ON DELETE CASCADE,
-    specs_json JSONB NOT NULL DEFAULT '[]'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS site_settings(

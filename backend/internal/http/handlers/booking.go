@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/internal/domain"
+	"backend/internal/http/middleware"
 	"backend/internal/http/response"
 	"backend/internal/service"
 	"errors"
@@ -25,16 +26,27 @@ func NewBooking(bookingService *service.BookingService) *Booking {
 
 // Create создает бронирование.
 // @Summary     Create booking
-// @Description Creates a booking from JSON payload
+// @Description Creates a booking from JSON payload (user derived from session)
 // @Tags        bookings
 // @Accept      json
 // @Produce     json
 // @Param       payload body domain.CreateBookingRequest true "Booking payload"
 // @Success     201 {object} response.BookingResponse
 // @Failure     400 {object} response.ErrorResponse
+// @Failure     401 {object} response.ErrorResponse
+// @Failure     409 {object} response.ErrorResponse
 // @Failure     500 {object} response.ErrorResponse
 // @Router      /api/v1/booking [post]
 func (b *Booking) Create(c *gin.Context) {
+	user, ok := middleware.UserFromContext(c)
+	if !ok {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusUnauthorized),
+			response.WithError("unauthorized", "Authentication required to create a booking", nil),
+		).JSON(c)
+		return
+	}
+
 	var req domain.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		br := response.ParseBindError(err)
@@ -45,8 +57,29 @@ func (b *Booking) Create(c *gin.Context) {
 		return
 	}
 
-	booking, err := b.bookingService.CreateBooking(c.Request.Context(), req)
+	booking, err := b.bookingService.CreateBooking(c.Request.Context(), user.ID, req)
 	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrBookingOverlap):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusConflict),
+				response.WithError("booking_overlap", "A booking already exists for this resource and time window", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrPlaceUnavailable):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusConflict),
+				response.WithError("place_unavailable", "This place is already booked for the selected time", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrCapacityExceeded):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusConflict),
+				response.WithError("capacity_exceeded", "Participants exceed available capacity for this time slot", nil),
+			).JSON(c)
+			return
+		}
+
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
@@ -66,7 +99,6 @@ func (b *Booking) Create(c *gin.Context) {
 		).JSON(c)
 		return
 	}
-	
 
 	response.NewResponseBuilder(
 		response.WithStatus(http.StatusCreated),

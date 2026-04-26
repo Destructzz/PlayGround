@@ -2,10 +2,20 @@ basePath: /
 definitions:
   domain.CreateBookingRequest:
     properties:
+      contact_email:
+        type: string
+      contact_name:
+        type: string
+      contact_phone:
+        type: string
+      details_json:
+        type: string
       end_time:
         type: string
       participants:
         minimum: 1
+        type: integer
+      place_id:
         type: integer
       service_id:
         type: integer
@@ -19,8 +29,6 @@ definitions:
         - confirmed
         - canceled
         - completed
-      user_id:
-        type: string
       zone_id:
         type: integer
     required:
@@ -28,8 +36,6 @@ definitions:
     - participants
     - service_id
     - start_time
-    - status
-    - user_id
     - zone_id
     type: object
   domain.CreatePaymentRequest:
@@ -121,6 +127,8 @@ definitions:
         type: integer
       description:
         type: string
+      details_json:
+        type: string
       is_active:
         type: boolean
       name:
@@ -131,13 +139,15 @@ definitions:
         enum:
         - game
         - event
-        - vip
         - lounge
         - sys
+      zone_tag_id:
+        type: integer
     required:
     - capacity
     - name
     - type
+    - zone_tag_id
     type: object
   domain.PatchBookingRequest:
     properties:
@@ -158,8 +168,6 @@ definitions:
         - confirmed
         - canceled
         - completed
-      user_id:
-        type: string
       zone_id:
         type: integer
     type: object
@@ -217,6 +225,8 @@ definitions:
         type: integer
       description:
         type: string
+      details_json:
+        type: string
       is_active:
         type: boolean
       name:
@@ -227,9 +237,10 @@ definitions:
         enum:
         - game
         - event
-        - vip
         - lounge
         - sys
+      zone_tag_id:
+        type: integer
     type: object
   domain.UpdateServiceRequest:
     properties:
@@ -247,35 +258,6 @@ definitions:
         type: string
       zone_id:
         type: integer
-    type: object
-  response.AuthResponse:
-    properties:
-      request_id:
-        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
-        type: string
-      timestamp:
-        example: "2026-01-19T15:37:27.514667373Z"
-        type: string
-      user:
-        $ref: '#/definitions/response.AuthUserResponse'
-    type: object
-  response.AuthUserResponse:
-    properties:
-      avatar_url:
-        example: https://example.com/avatar.jpg
-        type: string
-      email:
-        example: user@example.com
-        type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      name:
-        example: Ada Lovelace
-        type: string
-      provider:
-        example: google
-        type: string
     type: object
   response.BookingDoc:
     properties:
@@ -706,14 +688,12 @@ definitions:
     enum:
     - game
     - event
-    - vip
     - lounge
     - sys
     type: string
     x-enum-varnames:
     - ZoneTypeGame
     - ZoneTypeEvent
-    - ZoneTypeVip
     - ZoneTypeLounge
     - ZoneTypeSys
 host: localhost:8080
@@ -748,7 +728,7 @@ paths:
       - auth
   /api/v1/auth/{provider}/callback:
     get:
-      description: Completes OAuth flow and returns user profile
+      description: Completes OAuth flow and redirects with session cookie
       parameters:
       - description: OAuth provider
         enum:
@@ -757,13 +737,11 @@ paths:
         name: provider
         required: true
         type: string
-      produces:
-      - application/json
       responses:
-        "200":
-          description: OK
+        "302":
+          description: Redirect to frontend
           schema:
-            $ref: '#/definitions/response.AuthResponse'
+            type: string
         "400":
           description: Bad Request
           schema:
@@ -773,6 +751,45 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: OAuth callback
+      tags:
+      - auth
+  /api/v1/auth/dev-login:
+    post:
+      description: Creates a test user session for QA (non-production only)
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Dev login
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      description: Clears session cookie and deletes server session
+      responses:
+        "204":
+          description: No Content
+      summary: Logout
+      tags:
+      - auth
+  /api/v1/auth/session:
+    get:
+      description: Returns current authenticated user or signed-out state
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get session
       tags:
       - auth
   /api/v1/booking:
@@ -795,7 +812,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a booking from JSON payload
+      description: Creates a booking from JSON payload (user derived from session)
       parameters:
       - description: Booking payload
         in: body
@@ -812,6 +829,14 @@ paths:
             $ref: '#/definitions/response.BookingResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "500":
@@ -1097,6 +1122,62 @@ paths:
       summary: Pong
       tags:
       - health
+  /api/v1/public/event:
+    get:
+      description: Returns event zones with services and availability
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Event catalog
+      tags:
+      - public
+  /api/v1/public/gaming:
+    get:
+      description: Returns gaming zones with places, configurations, and availability
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Gaming catalog
+      tags:
+      - public
+  /api/v1/public/home:
+    get:
+      description: Returns homepage summaries for gaming/lounge/event
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Home catalog
+      tags:
+      - public
+  /api/v1/public/lounge:
+    get:
+      description: Returns lounge zones with services and availability
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Lounge catalog
+      tags:
+      - public
   /api/v1/service:
     get:
       description: Returns all services

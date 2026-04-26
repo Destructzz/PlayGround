@@ -22,6 +22,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 		middleware.RequestID(),
 		middleware.RequestLogger(),
 		gin.Recovery(),
+		corsMiddleware(),
 	)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -30,7 +31,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	health := handlers.NewHealth(pool)
 	userService := service.NewUserService(queries)
-	auth := handlers.NewAuth(userService)
+	auth := handlers.NewAuth(userService, queries)
 	zoneService := service.NewZone(queries)
 	zone := handlers.NewZone(zoneService)
 	serviceService := service.NewServiceService(queries)
@@ -41,51 +42,65 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	staff := handlers.NewStaff(staffService)
 	paymentService := service.NewPayment(queries)
 	payment := handlers.NewPayment(paymentService)
+	public := handlers.NewPublic(queries)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
 
 	api := r.Group("/api/v1")
+
+	// Auth routes (public)
 	api.GET("/auth/:provider", auth.Begin)
 	api.GET("/auth/:provider/callback", auth.Callback)
+	api.GET("/auth/session", middleware.AuthOptional(queries), auth.Session)
+	api.POST("/auth/logout", middleware.AuthOptional(queries), auth.Logout)
+	api.POST("/auth/dev-login", auth.DevLogin)
+
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
 	api.GET("/user", auth.ListUsers)
 
-	zoneScope := api.Group("/zone")
+	// Public catalog routes (no auth required)
+	publicScope := api.Group("/public")
+	publicScope.GET("/home", public.Home)
+	publicScope.GET("/lounge", public.Lounge)
+	publicScope.GET("/event", public.Event)
+	publicScope.GET("/gaming", public.Gaming)
 
+	// Zone CRUD (admin/internal)
+	zoneScope := api.Group("/zone")
 	zoneScope.POST("", zone.Create)
 	zoneScope.GET("", zone.Get)
 	zoneScope.GET("/:id", zone.GetById)
 	zoneScope.DELETE("/:id", zone.Delete)
 	zoneScope.PATCH("/:id", zone.Patch)
 
+	// Service CRUD
 	serviceScope := api.Group("/service")
-
 	serviceScope.POST("", svc.Create)
 	serviceScope.GET("", svc.Get)
 	serviceScope.GET("/:id", svc.GetById)
 	serviceScope.DELETE("/:id", svc.Delete)
 	serviceScope.PATCH("/:id", svc.Patch)
 
+	// Booking CRUD (write operations require auth)
 	bookingScope := api.Group("/booking")
-
-	bookingScope.POST("", booking.Create)
+	bookingScope.POST("", middleware.AuthRequired(queries), booking.Create)
 	bookingScope.GET("", booking.Get)
 	bookingScope.GET("/:id", booking.GetById)
-	bookingScope.DELETE("/:id", booking.Delete)
-	bookingScope.PATCH("/:id", booking.Patch)
+	bookingScope.DELETE("/:id", middleware.AuthRequired(queries), booking.Delete)
+	bookingScope.PATCH("/:id", middleware.AuthRequired(queries), booking.Patch)
 
+	// Staff CRUD
 	staffScope := api.Group("/staff")
-
 	staffScope.POST("", staff.Create)
 	staffScope.GET("", staff.Get)
 	staffScope.GET("/:id", staff.GetById)
 	staffScope.DELETE("/:id", staff.Delete)
 	staffScope.PATCH("/:id", staff.Patch)
 
+	// Payment CRUD
 	paymentScope := api.Group("/payment")
-
 	paymentScope.POST("", payment.Create)
 	paymentScope.GET("", payment.Get)
 	paymentScope.GET("/:id", payment.GetById)
@@ -102,4 +117,21 @@ func setGinMode(env string) {
 	}
 
 	gin.SetMode(gin.DebugMode)
+}
+
+// corsMiddleware enables CORS for frontend dev server.
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
 }

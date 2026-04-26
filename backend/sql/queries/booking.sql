@@ -8,11 +8,16 @@ INSERT INTO bookings (
     user_id,
     zone_id,
     service_id,
+    place_id,
     start_time,
     end_time,
     participants,
     total_price,
     status,
+    contact_name,
+    contact_email,
+    contact_phone,
+    details_json,
     created_at,
     updated_at
 )
@@ -20,11 +25,16 @@ SELECT
     sqlc.arg(user_id),
     sqlc.arg(zone_id),
     sqlc.arg(service_id),
+    sqlc.narg(place_id),
     sqlc.arg(start_time),
     sqlc.arg(end_time),
     sqlc.arg(participants)::int,
     FLOOR(sv.price_per_minute * (EXTRACT(EPOCH FROM (sqlc.arg(end_time)::timestamptz - sqlc.arg(start_time)::timestamptz)) / 60) * sqlc.arg(participants)::numeric),
     sqlc.arg(status),
+    sqlc.arg(contact_name),
+    sqlc.arg(contact_email),
+    sqlc.arg(contact_phone),
+    sqlc.arg(details_json),
     NOW(),
     NOW()
 FROM service_vars sv
@@ -33,21 +43,26 @@ RETURNING
     user_id,
     zone_id,
     service_id,
+    place_id,
     start_time,
     end_time,
     participants,
     total_price,
     status,
+    contact_name,
+    contact_email,
+    contact_phone,
+    details_json,
     created_at,
     updated_at;
 
 -- name: ListBookings :many
-SELECT id, user_id, zone_id, service_id, start_time, end_time, participants, total_price, status, created_at, updated_at
+SELECT id, user_id, zone_id, service_id, place_id, start_time, end_time, participants, total_price, status, contact_name, contact_email, contact_phone, details_json, created_at, updated_at
 FROM bookings
 ORDER BY id;
 
 -- name: GetBookingByID :one
-SELECT id, user_id, zone_id, service_id, start_time, end_time, participants, total_price, status, created_at, updated_at
+SELECT id, user_id, zone_id, service_id, place_id, start_time, end_time, participants, total_price, status, contact_name, contact_email, contact_phone, details_json, created_at, updated_at
 FROM bookings
 WHERE id = $1;
 
@@ -98,11 +113,16 @@ RETURNING
     b.user_id,
     b.zone_id,
     b.service_id,
+    b.place_id,
     b.start_time,
     b.end_time,
     b.participants,
     b.total_price,
     b.status,
+    b.contact_name,
+    b.contact_email,
+    b.contact_phone,
+    b.details_json,
     b.created_at,
     b.updated_at;
 
@@ -110,3 +130,15 @@ RETURNING
 DELETE FROM bookings
 WHERE id = $1
 RETURNING id;
+
+-- name: ListBookingsByUser :many
+SELECT id, user_id, zone_id, service_id, place_id, start_time, end_time, participants, total_price, status, contact_name, contact_email, contact_phone, details_json, created_at, updated_at
+FROM bookings
+WHERE user_id = $1
+ORDER BY created_at DESC;
+
+-- name: ListServicesByZoneID :many
+SELECT id, name, zone_id, duration, price, currency, description, is_active, details_json, created_at, updated_at
+FROM services
+WHERE zone_id = $1 AND is_active = TRUE
+ORDER BY id;

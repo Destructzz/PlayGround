@@ -34,6 +34,8 @@ func (s *ServiceService) CreateService(ctx context.Context, dto domain.CreateSer
 		createParams.IsActive = *dto.IsActive
 	}
 
+	createParams.DetailsJson = []byte("{}")
+
 	var parsedPrice pgtype.Numeric
 	if err := parsedPrice.Scan(dto.Price); err != nil {
 		return sqlc.Service{}, err
