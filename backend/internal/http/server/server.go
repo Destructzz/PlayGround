@@ -1,6 +1,7 @@
 package server
 
 import (
+	"backend/internal/domain"
 	"backend/internal/http/handlers"
 	"backend/internal/http/middleware"
 	"backend/internal/repo/sqlc"
@@ -22,7 +23,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 		middleware.RequestID(),
 		middleware.RequestLogger(),
 		gin.Recovery(),
-		corsMiddleware(),
+		middleware.Cors(),
 	)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -69,43 +70,43 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	// Zone CRUD (admin/internal)
 	zoneScope := api.Group("/zone")
-	zoneScope.POST("", zone.Create)
+	zoneScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Create)
 	zoneScope.GET("", zone.Get)
 	zoneScope.GET("/:id", zone.GetById)
-	zoneScope.DELETE("/:id", zone.Delete)
-	zoneScope.PATCH("/:id", zone.Patch)
+	zoneScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Delete)
+	zoneScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Patch)
 
 	// Service CRUD
 	serviceScope := api.Group("/service")
-	serviceScope.POST("", svc.Create)
+	serviceScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), svc.Create)
 	serviceScope.GET("", svc.Get)
 	serviceScope.GET("/:id", svc.GetById)
-	serviceScope.DELETE("/:id", svc.Delete)
-	serviceScope.PATCH("/:id", svc.Patch)
+	serviceScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), svc.Delete)
+	serviceScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), svc.Patch)
 
 	// Booking CRUD (write operations require auth)
 	bookingScope := api.Group("/booking")
-	bookingScope.POST("", middleware.AuthRequired(queries), booking.Create)
+	bookingScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Create)
 	bookingScope.GET("", booking.Get)
 	bookingScope.GET("/:id", booking.GetById)
-	bookingScope.DELETE("/:id", middleware.AuthRequired(queries), booking.Delete)
-	bookingScope.PATCH("/:id", middleware.AuthRequired(queries), booking.Patch)
+	bookingScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Delete)
+	bookingScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Patch)
 
 	// Staff CRUD
 	staffScope := api.Group("/staff")
-	staffScope.POST("", staff.Create)
+	staffScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Create)
 	staffScope.GET("", staff.Get)
 	staffScope.GET("/:id", staff.GetById)
-	staffScope.DELETE("/:id", staff.Delete)
-	staffScope.PATCH("/:id", staff.Patch)
+	staffScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Delete)
+	staffScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Patch)
 
 	// Payment CRUD
 	paymentScope := api.Group("/payment")
-	paymentScope.POST("", payment.Create)
+	paymentScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Create)
 	paymentScope.GET("", payment.Get)
 	paymentScope.GET("/:id", payment.GetById)
-	paymentScope.DELETE("/:id", payment.Delete)
-	paymentScope.PATCH("/:id", payment.Patch)
+	paymentScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Delete)
+	paymentScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Patch)
 
 	return r
 }
@@ -119,19 +120,3 @@ func setGinMode(env string) {
 	gin.SetMode(gin.DebugMode)
 }
 
-// corsMiddleware enables CORS for frontend dev server.
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}

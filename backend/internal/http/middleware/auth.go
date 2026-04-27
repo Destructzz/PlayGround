@@ -38,6 +38,44 @@ func AuthRequired(queries *sqlc.Queries) gin.HandlerFunc {
 	}
 }
 
+func AuthRequiredWithRole(queries *sqlc.Queries, roles ...sqlc.Role) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, sessionID, ok := resolveSession(c, queries)
+		if !ok {
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusUnauthorized),
+				response.WithError("unauthorized", "Authentication required", nil),
+			).JSON(c)
+			c.Abort()
+			return
+		}
+
+		// if user.Role != role {
+		// 	response.NewResponseBuilder(
+		// 		response.WithStatus(http.StatusUnauthorized),
+		// 		response.WithError("unauthorized", "Authorization required", nil),
+		// 	).JSON(c)
+		// 	c.Abort()
+		// 	return
+		// }
+
+		for _, r := range roles {
+			if user.Role == r {
+				c.Set(sessionUserKey, user)
+				c.Set(sessionIDKey, sessionID)
+				c.Next()
+				return
+			}
+		}
+
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusUnauthorized),
+			response.WithError("unauthorized", "Authorization required", nil),
+		).JSON(c)
+		c.Abort()
+	}
+}
+
 // AuthOptional resolves the session if present but does not enforce it.
 // Protected routes should use AuthRequired instead.
 func AuthOptional(queries *sqlc.Queries) gin.HandlerFunc {
