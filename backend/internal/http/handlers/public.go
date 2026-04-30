@@ -5,6 +5,7 @@ import (
 	"backend/internal/repo/sqlc"
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -194,6 +195,28 @@ func (p *Public) Event(c *gin.Context) {
 // @Success     200 {object} map[string]interface{}
 // @Router      /api/v1/public/gaming [get]
 func (p *Public) Gaming(c *gin.Context) {
+	zoneTags, err := p.queries.ListUserZoneTags(c.Request.Context())
+	if err != nil {
+		zap.L().Warn("zone tags lookup error", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("catalog_error", "Failed to load gaming tags", nil),
+		).JSON(c)
+		return
+	}
+
+	tagOrder := make(map[int32]int, len(zoneTags))
+	tagIDs := make([]int64, 0, len(zoneTags))
+	tagItems := make([]gamingZoneTag, 0, len(zoneTags))
+	for index, tag := range zoneTags {
+		tagOrder[tag.ID] = index
+		tagIDs = append(tagIDs, int64(tag.ID))
+		tagItems = append(tagItems, gamingZoneTag{
+			ID:   tag.ID,
+			Name: tag.Name,
+		})
+	}
+
 	zones, err := p.queries.ListZonesByType(c.Request.Context(), sqlc.ZoneTypeGame)
 	if err != nil {
 		zap.L().Warn("gaming catalog error", zap.Error(err))
@@ -204,18 +227,32 @@ func (p *Public) Gaming(c *gin.Context) {
 		return
 	}
 
-	configs, err := p.queries.ListComputerConfigurations(c.Request.Context())
-	if err != nil {
-		configs = []sqlc.ComputerConfiguration{}
+	configs := []sqlc.ComputerConfiguration{}
+	if len(tagIDs) > 0 {
+		configs, err = p.queries.ListComputerConfigurationsByZoneTagIDs(c.Request.Context(), tagIDs)
+		if err != nil {
+			configs = []sqlc.ComputerConfiguration{}
+		}
 	}
 
+	configItems := make([]gamingConfiguration, 0, len(configs))
 	configMap := make(map[int64]json.RawMessage, len(configs))
 	for _, cfg := range configs {
-		configMap[cfg.ID] = cfg.SpecsJson
+		parsedSpecs := parseJSONArray(cfg.SpecsJson)
+		configMap[cfg.ID] = parsedSpecs
+		configItems = append(configItems, gamingConfiguration{
+			ID:        cfg.ID,
+			ZoneTagID: cfg.ZoneTagsID,
+			SpecsJSON: parsedSpecs,
+		})
 	}
 
 	items := make([]gamingZone, 0, len(zones))
 	for _, z := range zones {
+		if _, ok := tagOrder[z.ZoneTagID]; !ok {
+			continue
+		}
+
 		places, err := p.queries.ListActiveZonePlaces(c.Request.Context(), z.ID)
 		if err != nil {
 			places = []sqlc.ZonePlace{}
@@ -272,9 +309,20 @@ func (p *Public) Gaming(c *gin.Context) {
 		})
 	}
 
+	sort.Slice(items, func(i, j int) bool {
+		leftOrder := tagOrder[items[i].ZoneTagID]
+		rightOrder := tagOrder[items[j].ZoneTagID]
+		if leftOrder != rightOrder {
+			return leftOrder < rightOrder
+		}
+
+		return items[i].ID < items[j].ID
+	})
+
 	response.NewResponseBuilder(
+		response.WithData("zone_tags", tagItems),
 		response.WithData("zones", items),
-		response.WithData("configurations", configs),
+		response.WithData("configurations", configItems),
 	).JSON(c)
 }
 
@@ -306,13 +354,24 @@ type catalogZoneWithServices struct {
 	Services []catalogService `json:"services"`
 }
 
+type gamingZoneTag struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+type gamingConfiguration struct {
+	ID        int64           `json:"id"`
+	ZoneTagID int64           `json:"zone_tag_id"`
+	SpecsJSON json.RawMessage `json:"specs_json"`
+}
+
 type gamingPlace struct {
-	ID              int64            `json:"id"`
-	Label           string           `json:"label"`
-	ConfigurationID *int64           `json:"configuration_id,omitempty"`
-	SortOrder       int32            `json:"sort_order"`
-	IsActive        bool             `json:"is_active"`
-	Specs           json.RawMessage  `json:"specs,omitempty"`
+	ID              int64           `json:"id"`
+	Label           string          `json:"label"`
+	ConfigurationID *int64          `json:"configuration_id,omitempty"`
+	SortOrder       int32           `json:"sort_order"`
+	IsActive        bool            `json:"is_active"`
+	Specs           json.RawMessage `json:"specs,omitempty"`
 }
 
 type gamingZone struct {
@@ -324,6 +383,13 @@ type gamingZone struct {
 func parseJSON(b []byte) json.RawMessage {
 	if len(b) == 0 {
 		return json.RawMessage("{}")
+	}
+	return json.RawMessage(b)
+}
+
+func parseJSONArray(b []byte) json.RawMessage {
+	if len(b) == 0 {
+		return json.RawMessage("[]")
 	}
 	return json.RawMessage(b)
 }

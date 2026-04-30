@@ -1,5 +1,15 @@
 basePath: /
 definitions:
+  domain.ComputerSpecificationEntry:
+    properties:
+      title:
+        type: string
+      value:
+        type: string
+    required:
+    - title
+    - value
+    type: object
   domain.CreateBookingRequest:
     properties:
       contact_email:
@@ -37,6 +47,19 @@ definitions:
     - service_id
     - start_time
     - zone_id
+    type: object
+  domain.CreateComputerConfigurationRequest:
+    properties:
+      specs_json:
+        items:
+          $ref: '#/definitions/domain.ComputerSpecificationEntry'
+        minItems: 1
+        type: array
+      zone_tag_id:
+        type: integer
+    required:
+    - specs_json
+    - zone_tag_id
     type: object
   domain.CreatePaymentRequest:
     properties:
@@ -149,6 +172,13 @@ definitions:
     - type
     - zone_tag_id
     type: object
+  domain.CreateZoneTagRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
   domain.PatchBookingRequest:
     properties:
       end_time:
@@ -169,6 +199,15 @@ definitions:
         - canceled
         - completed
       zone_id:
+        type: integer
+    type: object
+  domain.PatchComputerConfigurationRequest:
+    properties:
+      specs_json:
+        items:
+          $ref: '#/definitions/domain.ComputerSpecificationEntry'
+        type: array
+      zone_tag_id:
         type: integer
     type: object
   domain.PatchPaymentRequest:
@@ -241,6 +280,11 @@ definitions:
         - sys
       zone_tag_id:
         type: integer
+    type: object
+  domain.PatchZoneTagRequest:
+    properties:
+      name:
+        type: string
     type: object
   domain.UpdateServiceRequest:
     properties:
@@ -753,22 +797,6 @@ paths:
       summary: OAuth callback
       tags:
       - auth
-  /api/v1/auth/dev-login:
-    post:
-      description: Creates a test user session for QA (non-production only)
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Dev login
-      tags:
-      - auth
   /api/v1/auth/logout:
     post:
       description: Clears session cookie and deletes server session
@@ -948,6 +976,152 @@ paths:
       summary: Patch booking
       tags:
       - bookings
+  /api/v1/configuration:
+    get:
+      description: Returns all computer configurations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List configurations
+      tags:
+      - configurations
+    post:
+      consumes:
+      - application/json
+      description: Creates a computer configuration from JSON payload
+      parameters:
+      - description: Configuration payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateComputerConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create configuration
+      tags:
+      - configurations
+  /api/v1/configuration/{id}:
+    delete:
+      description: Deletes computer configuration by path id
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete configuration
+      tags:
+      - configurations
+    get:
+      description: Returns computer configuration by path id
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get configuration by id
+      tags:
+      - configurations
+    patch:
+      consumes:
+      - application/json
+      description: Updates computer configuration by path id
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Configuration patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchComputerConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch configuration
+      tags:
+      - configurations
   /api/v1/payment:
     get:
       description: Returns all payments
@@ -1178,6 +1352,71 @@ paths:
       summary: Lounge catalog
       tags:
       - public
+  /api/v1/seed:
+    delete:
+      description: Deletes base gaming seed data in non-production environments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete seed
+      tags:
+      - seed
+    get:
+      description: Returns current seed data snapshot in non-production environments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get seed state
+      tags:
+      - seed
+    post:
+      description: Creates base gaming seed data without duplicates in non-production
+        environments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Apply seed
+      tags:
+      - seed
   /api/v1/service:
     get:
       description: Returns all services
@@ -1534,6 +1773,152 @@ paths:
       summary: Create zone
       tags:
       - zones
+  /api/v1/zone-tag:
+    get:
+      description: Returns all zone tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List zone tags
+      tags:
+      - zone-tags
+    post:
+      consumes:
+      - application/json
+      description: Creates a zone tag from JSON payload
+      parameters:
+      - description: Zone tag payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateZoneTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create zone tag
+      tags:
+      - zone-tags
+  /api/v1/zone-tag/{id}:
+    delete:
+      description: Deletes zone tag by path id
+      parameters:
+      - description: Zone tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete zone tag
+      tags:
+      - zone-tags
+    get:
+      description: Returns zone tag by path id
+      parameters:
+      - description: Zone tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get zone tag by id
+      tags:
+      - zone-tags
+    patch:
+      consumes:
+      - application/json
+      description: Updates zone tag by path id
+      parameters:
+      - description: Zone tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Zone tag patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchZoneTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch zone tag
+      tags:
+      - zone-tags
   /api/v1/zone/{id}:
     delete:
       description: Deletes zone by id

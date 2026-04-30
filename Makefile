@@ -18,7 +18,7 @@ all: swag sqlc migrate-up
 
 swag:
 	@echo "Generating Swagger..."
-	swag init -g $(SWAG_MAIN)
+	swag init -g $(SWAG_MAIN) -o backend/docs
 
 sqlc:
 	@echo "Generating SQLC code..."

@@ -14,6 +14,10 @@ INSERT INTO zone_places (zone_id, label, configuration_id, sort_order, is_active
 VALUES ($1, $2, $3, $4, $5)
 RETURNING id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at;
 
+-- name: DeleteZonePlace :execrows
+DELETE FROM zone_places
+WHERE id = $1;
+
 -- name: ListActiveZonePlaces :many
 SELECT zp.id, zp.zone_id, zp.label, zp.configuration_id, zp.sort_order, zp.is_active, zp.created_at, zp.updated_at
 FROM zone_places zp

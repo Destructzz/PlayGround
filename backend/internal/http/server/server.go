@@ -33,8 +33,14 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	health := handlers.NewHealth(pool)
 	userService := service.NewUserService(queries)
 	auth := handlers.NewAuth(userService, queries)
+	seedService := service.NewSeed(pool, queries)
+	seed := handlers.NewSeed(seedService)
 	zoneService := service.NewZone(queries)
 	zone := handlers.NewZone(zoneService)
+	zoneTagService := service.NewZoneTag(queries)
+	zoneTag := handlers.NewZoneTag(zoneTagService)
+	configurationService := service.NewComputerConfiguration(queries)
+	configuration := handlers.NewComputerConfiguration(configurationService)
 	serviceService := service.NewServiceService(queries)
 	svc := handlers.NewService(serviceService)
 	bookingService := service.NewBooking(queries)
@@ -55,11 +61,13 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	api.GET("/auth/:provider/callback", auth.Callback)
 	api.GET("/auth/session", middleware.AuthOptional(queries), auth.Session)
 	api.POST("/auth/logout", middleware.AuthOptional(queries), auth.Logout)
-	api.POST("/auth/dev-login", auth.DevLogin)
 
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
 	api.GET("/user", auth.ListUsers)
+	api.GET("/seed", seed.Get)
+	api.POST("/seed", seed.Post)
+	api.DELETE("/seed", seed.Delete)
 
 	// Public catalog routes (no auth required)
 	publicScope := api.Group("/public")
@@ -75,6 +83,20 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	zoneScope.GET("/:id", zone.GetById)
 	zoneScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Delete)
 	zoneScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Patch)
+
+	zoneTagScope := api.Group("/zone-tag")
+	zoneTagScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zoneTag.Create)
+	zoneTagScope.GET("", zoneTag.Get)
+	zoneTagScope.GET("/:id", zoneTag.GetByID)
+	zoneTagScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zoneTag.Delete)
+	zoneTagScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zoneTag.Patch)
+
+	configurationScope := api.Group("/configuration")
+	configurationScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), configuration.Create)
+	configurationScope.GET("", configuration.Get)
+	configurationScope.GET("/:id", configuration.GetByID)
+	configurationScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), configuration.Delete)
+	configurationScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), configuration.Patch)
 
 	// Service CRUD
 	serviceScope := api.Group("/service")
@@ -119,4 +141,3 @@ func setGinMode(env string) {
 
 	gin.SetMode(gin.DebugMode)
 }
-

@@ -39,6 +39,16 @@ func New(ctx context.Context, params Params) (*App, error) {
 
 	queries := sqlc.New(pool)
 	engine := httpserver.NewRouter(params.Env, pool, queries)
+	publicURL := os.Getenv("PUBLIC_URL")
+	if publicURL == "" {
+		publicURL = "http://localhost:8080"
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
+
 	srv := &http.Server{
 		Addr:              params.HTTPAddr,
 		Handler:           engine,
@@ -52,9 +62,7 @@ func New(ctx context.Context, params Params) (*App, error) {
 		google.New(
 			os.Getenv("GOOGLE_CLIENT_ID"),
 			os.Getenv("GOOGLE_CLIENT_SECRET"),
-			fmt.Sprintf("%s/api/v1/auth/google/callback",
-				os.Getenv("PUBLIC_URL"),
-			),
+			fmt.Sprintf("%s/api/v1/auth/google/callback", publicURL),
 			"email",
 			"profile",
 		),

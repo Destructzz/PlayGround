@@ -25,14 +25,21 @@
             to="/event"
             class="transition-colors hover:text-white"
           >Event</NuxtLink>
+          <template v-if="authStore.isAuthenticated">
+            <span class="max-w-52 truncate text-cyan-200">{{ displayName }}</span>
+            <button
+              type="button"
+              class="transition-colors hover:text-white"
+              @click="authStore.logout"
+            >
+              Выйти
+            </button>
+          </template>
           <NuxtLink
+            v-else
             to="/login"
             class="transition-colors hover:text-white"
-          >Login</NuxtLink>
-          <NuxtLink
-            to="/register"
-            class="transition-colors hover:text-white"
-          >Register</NuxtLink>
+          >Google Login</NuxtLink>
         </div>
         <p>© 2026 PlayGround</p>
       </div>
@@ -41,4 +48,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
+const displayName = computed(() => authStore.user?.name || 'Пользователь')
 </script>

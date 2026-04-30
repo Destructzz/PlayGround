@@ -184,65 +184,6 @@ func (a *Auth) Logout(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// DevLogin seeds a session for automated QA in non-production environments.
-// @Summary     Dev login
-// @Description Creates a test user session for QA (non-production only)
-// @Tags        auth
-// @Success     200 {object} map[string]interface{}
-// @Failure     403 {object} response.ErrorResponse
-// @Router      /api/v1/auth/dev-login [post]
-func (a *Auth) DevLogin(c *gin.Context) {
-	env := os.Getenv("APP_ENV")
-	if env == "production" {
-		response.NewResponseBuilder(
-			response.WithStatus(http.StatusForbidden),
-			response.WithError("forbidden", "Dev login is not available in production", nil),
-		).JSON(c)
-		return
-	}
-
-	// Upsert a deterministic test user
-	req := domain.UpsertUserRequest{
-		GoogleID:  "dev-test-google-id",
-		FullName:  "Dev Test User",
-		Email:     "dev@playground.local",
-		AvatarURL: "",
-	}
-
-	dbUser, err := a.userService.UpsertUser(c.Request.Context(), req)
-	if err != nil {
-		zap.L().Warn("dev-login upsert failed", zap.Error(err))
-		response.NewResponseBuilder(
-			response.WithStatus(http.StatusInternalServerError),
-			response.WithError("db_error", "Failed to create dev user", nil),
-		).JSON(c)
-		return
-	}
-
-	session, err := a.queries.CreateSession(c.Request.Context(), dbUser.ID)
-	if err != nil {
-		zap.L().Warn("dev-login session failed", zap.Error(err))
-		response.NewResponseBuilder(
-			response.WithStatus(http.StatusInternalServerError),
-			response.WithError("session_error", "Failed to create dev session", nil),
-		).JSON(c)
-		return
-	}
-
-	middleware.SetSessionCookie(c, session.ID.String())
-
-	response.NewResponseBuilder(
-		response.WithData("authenticated", true),
-		response.WithData("user", response.AuthUserResponse{
-			ID:        dbUser.ID.String(),
-			Email:     dbUser.Email,
-			AvatarURL: dbUser.AvatarUrl.String,
-			Name:      dbUser.FullName,
-			Provider:  "dev",
-		}),
-	).JSON(c)
-}
-
 // ListUsers возвращает список пользователей.
 // @Summary     List users
 // @Description Returns all active users

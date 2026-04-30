@@ -34,18 +34,51 @@
 
       <!-- Кнопки действий -->
       <div class="flex items-center gap-4">
-        <NuxtLink
-          to="/login"
-          class="text-sm font-semibold text-cyan-100/60 hover:text-white hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.4)] transition-all hidden sm:block"
-        >Войти</NuxtLink>
-        <NuxtLink
-          to="/register"
-          class="text-sm font-semibold text-cyan-300 hover:text-white hover:drop-shadow-[0_0_5px_rgba(34,211,238,0.5)] transition-all hidden sm:block"
-        >Регистрация</NuxtLink>
+        <template v-if="authStore.isLoading">
+          <span class="text-sm text-cyan-100/50">Загрузка...</span>
+        </template>
+        <template v-else-if="authStore.isAuthenticated">
+          <div class="flex items-center gap-3 border border-cyan-400/20 bg-cyan-950/40 px-3 py-2.5">
+            <img
+              v-if="authStore.user?.avatar_url"
+              :src="authStore.user.avatar_url"
+              :alt="authStore.user.name"
+              class="h-9 w-9 rounded-full border border-cyan-300/30 object-cover"
+            >
+            <div
+              v-else
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-sm font-bold text-cyan-100"
+            >
+              {{ accountInitial }}
+            </div>
+
+            <div class="hidden min-w-0 sm:block">
+              <p class="max-w-48 truncate text-sm font-medium text-cyan-100">{{ displayName }}</p>
+            </div>
+            <button
+              @click="authStore.logout"
+              class="text-sm font-semibold text-red-400 hover:text-red-300 transition-all"
+            >
+              Выйти
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <NuxtLink
+            to="/login"
+            class="text-sm font-semibold text-cyan-100/60 hover:text-white hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.4)] transition-all hidden sm:block"
+          >Войти</NuxtLink>
+        </template>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
+const displayName = computed(() => authStore.user?.name || 'Пользователь')
+const accountInitial = computed(() => displayName.value.charAt(0).toUpperCase())
 </script>

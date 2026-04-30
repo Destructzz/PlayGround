@@ -5,6 +5,7 @@ import (
 	"backend/internal/repo/sqlc"
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -111,28 +112,36 @@ func SessionIDFromContext(c *gin.Context) (uuid.UUID, bool) {
 
 // SetSessionCookie sets the browser cookie for the session.
 func SetSessionCookie(c *gin.Context, sessionID string) {
-	c.SetCookie(
-		sessionCookieName,
-		sessionID,
-		7*24*60*60, // 7 days
-		"/",
-		"",    // domain auto
-		false, // secure = false for local dev
-		true,  // httpOnly
-	)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    sessionID,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60 * 60,
+		HttpOnly: true,
+		Secure:   isSecureRequest(c),
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 // ClearSessionCookie removes the session cookie.
 func ClearSessionCookie(c *gin.Context) {
-	c.SetCookie(
-		sessionCookieName,
-		"",
-		-1,
-		"/",
-		"",
-		false,
-		true,
-	)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   isSecureRequest(c),
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func isSecureRequest(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+
+	return strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https")
 }
 
 func resolveSession(c *gin.Context, queries *sqlc.Queries) (sqlc.User, uuid.UUID, bool) {

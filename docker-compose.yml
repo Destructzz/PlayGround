@@ -31,8 +31,20 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       PUBLIC_URL: ${PUBLIC_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "8080:8080"
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - backend
+    network_mode: host
+    environment:
+      CADDY_BACKEND_UPSTREAM: ${CADDY_BACKEND_UPSTREAM}
+      CADDY_FRONTEND_UPSTREAM: ${CADDY_FRONTEND_UPSTREAM}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
 
 volumes:
   pgdata:

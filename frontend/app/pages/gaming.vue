@@ -28,6 +28,19 @@
           <span class="absolute inset-0 bg-clip-text text-transparent opacity-50 dynamic-gradient blur-[20px] transition-all duration-700">Игровая</span>
         </h1>
       </div>
+
+      <div
+        v-if="catalogError"
+        class="rounded-2xl border border-red-400/25 bg-red-500/10 px-5 py-4 text-sm text-red-100"
+      >
+        {{ catalogError }}
+      </div>
+      <div
+        v-else-if="isCatalogEmpty"
+        class="rounded-2xl border border-zinc-700 bg-zinc-900/40 px-5 py-4 text-sm text-zinc-300"
+      >
+        В backend пока нет игровых зон для этой страницы.
+      </div>
     </div>
 
     <!-- Бегущая лента технологий -->
@@ -56,11 +69,14 @@
       <!-- Селектор Вкладок (С плавным перетеканием ползунка) -->
       <section class="mb-12 flex justify-center w-full px-4">
         <div class="bg-zinc-900/60 backdrop-blur-md p-2 rounded-full border border-white/10 shadow-xl w-full max-w-2xl">
-          <div class="relative grid grid-cols-3 w-full">
+          <div
+            class="relative grid w-full"
+            :style="{ gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }"
+          >
             <!-- Плывущий активный задний фон (ползунок) -->
             <div
-              class="absolute top-0 bottom-0 w-[33.333%] rounded-full z-0 dynamic-bg dynamic-glow transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
-              :style="{ transform: `translateX(${activeClass * 100}%)` }"
+              class="absolute top-0 bottom-0 rounded-full z-0 dynamic-bg dynamic-glow transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+              :style="{ width: `${100 / tabCount}%`, transform: `translateX(${activeClass * 100}%)` }"
             />
 
             <!-- Кнопки -->
@@ -119,7 +135,10 @@
 
       <!-- Pricing comparison bar -->
       <section class="mt-20">
-        <div class="bg-zinc-950/60 border border-white/5 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div
+          v-if="pricingTiers.length"
+          class="bg-zinc-950/60 border border-white/5 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+        >
           <div
             v-for="(tier, i) in pricingTiers"
             :key="'tier'+i"
@@ -136,10 +155,16 @@
             </p>
           </div>
           <div
-            v-for="i in 2"
+            v-for="i in Math.max(pricingTiers.length - 1, 0)"
             :key="'div'+i"
             class="hidden md:block w-[1px] h-16 bg-zinc-800"
           />
+        </div>
+        <div
+          v-else
+          class="rounded-3xl border border-zinc-800 bg-zinc-950/40 p-6 text-sm text-zinc-400"
+        >
+          Backend пока не вернул ни одного активного игрового тарифа.
         </div>
       </section>
 
@@ -200,15 +225,24 @@
                 :class="['px-6 py-3 rounded-xl font-bold text-sm border transition-all duration-300',
                          selectedZone === i ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']"
                 @click="selectedZone = i"
-              >
-                {{ zone.name }}
-              </button>
-            </div>
+                >
+                  {{ zone.name }}
+                </button>
+              </div>
+            <p
+              v-if="!zones.length"
+              class="mb-8 text-sm text-zinc-500"
+            >
+              В backend пока нет зон с местами.
+            </p>
             <!-- Places Grid -->
             <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
               Выберите место
             </p>
-            <div class="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-8">
+            <div
+              v-if="zones[selectedZone]?.places?.length"
+              class="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-8"
+            >
               <button
                 v-for="(pc, j) in zones[selectedZone]?.places"
                 :key="'v1p'+j"
@@ -216,10 +250,16 @@
                          pc.booked ? 'bg-red-950/40 border-red-900/50 text-red-400 cursor-not-allowed'
                          : selectedPlace === j ? 'dynamic-bg text-black border-transparent scale-110 dynamic-glow' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600']"
                 @click="!pc.booked && (selectedPlace = j)"
-              >
-                {{ pc.name }}
-              </button>
+                >
+                  {{ pc.name }}
+                </button>
             </div>
+            <p
+              v-else
+              class="mb-8 text-sm text-zinc-500"
+            >
+              Для выбранной зоны backend пока не вернул ни одного игрового места.
+            </p>
             <!-- Timeline -->
             <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
               Выберите время
@@ -253,6 +293,9 @@
                 <span>{{ hour.time }}</span>
               </div>
             </div>
+            <p class="text-xs text-zinc-500">
+              Слоты времени пока локальные: `public/gaming` ещё не отдаёт публичную занятость мест по часам.
+            </p>
           </div>
         </transition>
       </section>
@@ -261,100 +304,245 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
+
+type GamingService = {
+  id: number
+  name: string
+  duration: number
+  price: string
+  currency: string
+  description: string
+  details_json?: unknown
+}
+
+type GamingPlace = {
+  id: number
+  label: string
+  configuration_id?: number | null
+  sort_order: number
+  is_active: boolean
+  specs?: unknown
+}
+
+type GamingZone = {
+  id: number
+  name: string
+  zone_type: string
+  zone_tag_id: number
+  capacity: number
+  description: string
+  is_active: boolean
+  details_json?: unknown
+  places: GamingPlace[]
+  services: GamingService[]
+}
+
+type GamingConfiguration = {
+  id: number
+  zone_tag_id: number
+  specs_json?: unknown
+}
+
+type GamingZoneTag = {
+  id: number
+  name: string
+}
+
+type GamingCatalogResponse = {
+  zone_tags?: GamingZoneTag[] | null
+  zones?: GamingZone[] | null
+  configurations?: GamingConfiguration[] | null
+}
+
+type ClassSpec = {
+  title: string
+  value: string
+}
+
+type ClassData = {
+  name: string
+  prefix: string
+  title: string
+  desc: string
+  hexColor: string
+  specs: ClassSpec[]
+}
+
+type ZoneView = {
+  name: string
+  places: Array<{
+    id: number
+    name: string
+    booked: boolean
+  }>
+}
+
+type PricingTier = {
+  name: string
+  price: string
+  note: string
+}
 
 useHead({
   title: 'Игровая зона - PlayGround'
 })
 
-// Данные о классах компьютеров (добавлены цвета)
-const classDataList = [
-  {
-    name: 'Standard',
-    prefix: 'БАЗОВАЯ',
-    title: 'МОЩЬ',
-    desc: 'Надежные сборки для комфортной игры в любые современные проекты. Идеальный баланс производительности и стоимости. Заходи и забирай свои раунды без фризов.',
-    hexColor: '#10b981', // Emerald
-    specs: [
-      { title: 'Видеокарта', value: 'RTX 4060 Ti' },
-      { title: 'Процессор', value: 'Intel Core i5 13400F' },
-      { title: 'Оперативная память', value: '16GB DDR4' },
-      { title: 'Монитор', value: 'AOC 165Hz IPS' },
-      { title: 'Периферия', value: 'HyperX Series' }
-    ]
-  },
-  {
-    name: 'VIP Class',
-    prefix: 'БЕСКОМПРОМИССНАЯ',
-    title: 'МОЩЬ',
-    desc: 'Погрузись в игру на максималках. Наши VIP-станции оснащены передовым железом для выдачи стабильного FPS в любых киберспортивных дисциплинах. Никаких лагов — только твой скилл.',
-    hexColor: '#22d3ee', // Cyan
-    specs: [
-      { title: 'Видеокарта', value: 'RTX 4090 24GB' },
-      { title: 'Процессор', value: 'Intel Core i9 14900K' },
-      { title: 'Оперативная память', value: '64GB DDR5 XMP' },
-      { title: 'Монитор', value: 'Zowie 360Hz 1ms' },
-      { title: 'Периферия', value: 'Logitech G PRO X' }
-    ]
-  },
-  {
-    name: 'Bootcamp',
-    prefix: 'КОМАНДНАЯ',
-    title: 'СИНЕРГИЯ',
-    desc: 'Изолированная комната для полноценных тренировок. Одинаковые топовые сетапы (5 шт.) для максимальной концентрации команды. Ваш личный тренировочный лагерь.',
-    hexColor: '#f97316', // Orange
-    specs: [
-      { title: 'Видеокарта', value: 'RTX 4080 Super' },
-      { title: 'Процессор', value: 'AMD Ryzen 7 7800X3D' },
-      { title: 'Оперативная память', value: '32GB DDR5 6000MHz' },
-      { title: 'Монитор', value: 'Alienware 240Hz OLED' },
-      { title: 'Периферия', value: 'Razer Esports' }
+const { data: catalog, error } = await useAsyncData('gaming-catalog', () => $fetch<GamingCatalogResponse>('/api/v1/public/gaming'))
+
+const zoneColors = ['#10b981', '#22d3ee', '#f97316', '#a855f7', '#f43f5e']
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function prettifyKey(value: string) {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (letter) => letter.toUpperCase())
+}
+
+function stringifyValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => stringifyValue(item)).filter(Boolean).join(', ')
+  }
+
+  if (isRecord(value)) {
+    return Object.entries(value)
+      .map(([key, item]) => `${prettifyKey(key)}: ${stringifyValue(item)}`)
+      .join(', ')
+  }
+
+  return ''
+}
+
+function extractSpecs(input: unknown): ClassSpec[] {
+  if (Array.isArray(input)) {
+    return input.flatMap((item, index) => {
+      if (isRecord(item)) {
+        if (typeof item.title === 'string' && item.value !== undefined) {
+          return [{ title: item.title, value: stringifyValue(item.value) }]
+        }
+
+        const firstPair = Object.entries(item)[0]
+        if (!firstPair) {
+          return []
+        }
+
+        return [{ title: prettifyKey(firstPair[0]), value: stringifyValue(firstPair[1]) }]
+      }
+
+      const value = stringifyValue(item)
+      return value ? [{ title: `Параметр ${index + 1}`, value }] : []
+    }).filter((spec) => spec.value)
+  }
+
+  if (isRecord(input)) {
+    return Object.entries(input)
+      .map(([key, value]) => ({ title: prettifyKey(key), value: stringifyValue(value) }))
+      .filter((spec) => spec.value)
+  }
+
+  return []
+}
+
+function formatPrice(price: string, currency: string) {
+  const suffix = currency === 'RUB' ? '₽' : ` ${currency}`
+  return `${price}${suffix}`
+}
+
+const rawZones = computed(() => catalog.value?.zones ?? [])
+const zoneTags = computed(() => catalog.value?.zone_tags ?? [])
+const rawConfigurations = computed(() => catalog.value?.configurations ?? [])
+const catalogError = computed(() => error.value ? 'Не удалось загрузить игровые зоны из backend.' : '')
+const isCatalogEmpty = computed(() => !catalogError.value && zoneTags.value.length === 0)
+const tabCount = computed(() => Math.max(zoneTags.value.length, 1))
+
+const tagOrder = computed(() => new Map(zoneTags.value.map((tag, index) => [tag.id, index])))
+const userZones = computed(() => [...rawZones.value].sort((left, right) => {
+  const leftOrder = tagOrder.value.get(left.zone_tag_id) ?? Number.MAX_SAFE_INTEGER
+  const rightOrder = tagOrder.value.get(right.zone_tag_id) ?? Number.MAX_SAFE_INTEGER
+
+  if (leftOrder !== rightOrder) {
+    return leftOrder - rightOrder
+  }
+
+  return left.id - right.id
+}))
+
+const classDataList = computed<ClassData[]>(() => zoneTags.value.map((tag, index) => {
+  const tagZones = userZones.value.filter((zone) => zone.zone_tag_id === tag.id)
+  const representativeZone = tagZones[0]
+  const details = isRecord(representativeZone?.details_json) ? representativeZone.details_json : {}
+  const config = rawConfigurations.value.find((item) => item.zone_tag_id === tag.id)
+  const configSpecs = extractSpecs(config?.specs_json)
+  const placeSpecs = extractSpecs(representativeZone?.places.find((place) => place.specs)?.specs)
+  const detailsSpecs = extractSpecs(details.specs)
+  const service = representativeZone?.services[0]
+  const specs = (configSpecs.length ? configSpecs : placeSpecs.length ? placeSpecs : detailsSpecs).slice(0, 5)
+
+  return {
+    name: tag.name,
+    prefix: typeof details.prefix === 'string' ? details.prefix : `ТЕГ ${index + 1}`,
+    title: typeof details.title === 'string' ? details.title : representativeZone?.name || tag.name,
+    desc: representativeZone?.description || service?.description || 'Игровая зона доступна для бронирования через backend-каталог.',
+    hexColor: typeof details.hexColor === 'string' ? details.hexColor : zoneColors[index % zoneColors.length]!,
+    specs: specs.length ? specs : [
+      { title: 'Вместимость', value: String(representativeZone?.capacity ?? 0) },
+      { title: 'Игровых мест', value: String(representativeZone?.places.length ?? 0) },
+      { title: 'Тарифов', value: String(representativeZone?.services.length ?? 0) },
+      { title: 'Конфигураций', value: String(rawConfigurations.value.filter((item) => item.zone_tag_id === tag.id).length) },
+      { title: 'Статус', value: representativeZone?.is_active ? 'Активна' : 'Скрыта' }
     ]
   }
-]
+}))
 
-const activeClass = ref(1)
-const currentClassData = computed(() => classDataList[activeClass.value] as typeof classDataList[0])
+const activeClass = ref(0)
+const currentClassData = computed(() => classDataList.value[activeClass.value])
 const activeColor = computed(() => currentClassData.value?.hexColor || '#10b981')
 const tempKey = computed(() => `spec-list-${activeClass.value}-`)
 
-// ====== Area Data ======
-const pricingTiers = [
-  { name: 'Standard', price: '150₽', note: 'RTX 4060 Ti • 165Hz' },
-  { name: 'VIP', price: '250₽', note: 'RTX 4090 • 360Hz' },
-  { name: 'Bootcamp', price: '200₽', note: 'На человека • от 5 чел.' }
-]
+const pricingTiers = computed<PricingTier[]>(() => zoneTags.value.flatMap((tag) => {
+  const zone = userZones.value.find((item) => item.zone_tag_id === tag.id)
+  const service = zone?.services[0]
 
-// ====== Booking Panel State ======
+  if (!zone || !service) {
+    return []
+  }
+
+  return [{
+    name: tag.name,
+    price: formatPrice(service.price, service.currency),
+    note: service.description || `${zone.name} • ${service.duration} мин`
+  }]
+}))
+
 const panels = reactive({ v1: false, v2: false, v3: false, v4: false, v5: false })
 const selectedDate = ref(0)
 const selectedZone = ref(0)
 const selectedPlace = ref(-1)
 const selectedHours = ref<number[]>([])
 
-const zones = [
-  {
-    name: 'Зона A — Standard',
-    places: Array.from({ length: 10 }, (_, i) => ({
-      name: `ПК ${i + 1}`,
-      booked: [2, 5, 7].includes(i)
+const zones = computed<ZoneView[]>(() => userZones.value.map((zone) => ({
+  name: zone.name,
+  places: [...zone.places]
+    .sort((left, right) => left.sort_order - right.sort_order)
+    .map((place) => ({
+      id: place.id,
+      name: place.label,
+      booked: false
     }))
-  },
-  {
-    name: 'Зона B — VIP',
-    places: Array.from({ length: 6 }, (_, i) => ({
-      name: `VIP ${i + 1}`,
-      booked: [1, 4].includes(i)
-    }))
-  },
-  {
-    name: 'Зона C — Bootcamp',
-    places: Array.from({ length: 5 }, (_, i) => ({
-      name: `BC ${i + 1}`,
-      booked: [3].includes(i)
-    }))
-  }
-]
+})))
 
 const hours = Array.from({ length: 12 }, (_, i) => ({
   time: `${10 + i}:00`,
@@ -366,7 +554,7 @@ const dates = Array.from({ length: 7 }, (_, i) => {
   const d = new Date()
   d.setDate(d.getDate() + i)
 
-  let label: string = ''
+  let label = ''
   if (i === 0) label = 'Сегодня'
   else if (i === 1) label = 'Завтра'
   else {
@@ -422,6 +610,34 @@ function getHourClass(k: number, hour: (typeof hours)[number]) {
 
   return classes.join(' ')
 }
+
+watchEffect(() => {
+  if (classDataList.value.length === 0) {
+    activeClass.value = 0
+    return
+  }
+
+  if (activeClass.value >= classDataList.value.length) {
+    activeClass.value = 0
+  }
+})
+
+watchEffect(() => {
+  if (zones.value.length === 0) {
+    selectedZone.value = 0
+    selectedPlace.value = -1
+    return
+  }
+
+  if (selectedZone.value >= zones.value.length) {
+    selectedZone.value = 0
+  }
+
+  const places = zones.value[selectedZone.value]?.places ?? []
+  if (selectedPlace.value >= places.length) {
+    selectedPlace.value = -1
+  }
+})
 </script>
 
 <style scoped>

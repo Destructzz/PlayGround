@@ -1,0 +1,10 @@
+http://localhost {
+	@backend path /api/v1* /docs* /swagger* /openapi.json /healthz /readyz
+	handle @backend {
+		reverse_proxy {$CADDY_BACKEND_UPSTREAM:localhost:8080}
+	}
+
+	handle {
+		reverse_proxy {$CADDY_FRONTEND_UPSTREAM:localhost:3000}
+	}
+}
