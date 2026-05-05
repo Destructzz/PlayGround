@@ -6,6 +6,7 @@ import (
 	"backend/internal/http/middleware"
 	"backend/internal/repo/sqlc"
 	"backend/internal/service"
+	"backend/pkg"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,7 +16,7 @@ import (
 
 // NewRouter configures Gin engine, middleware and routes.
 func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engine {
-	setGinMode(env)
+	pkg.SetGinMode(env)
 	gin.EnableJsonDecoderDisallowUnknownFields()
 
 	r := gin.New()
@@ -26,9 +27,11 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 		middleware.Cors(),
 	)
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.Static("/docs", "./static")
-	r.StaticFile("/openapi.json", "./docs/swagger.json")
+	tool := handlers.NewToolHandler(queries)
+
+	r.GET("/docs", tool.Docs)
+	r.GET("/swagger/*any", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/openapi.json", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), tool.GetOpenAPI)
 
 	health := handlers.NewHealth(pool)
 	userService := service.NewUserService(queries)
@@ -131,13 +134,4 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	paymentScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Patch)
 
 	return r
-}
-
-func setGinMode(env string) {
-	if env == "production" {
-		gin.SetMode(gin.ReleaseMode)
-		return
-	}
-
-	gin.SetMode(gin.DebugMode)
 }

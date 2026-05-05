@@ -9,6 +9,7 @@ import (
 	_ "backend/docs"
 	"backend/internal/app"
 	"backend/internal/observability"
+	"backend/pkg"
 	"context"
 	"fmt"
 	"os"
@@ -20,9 +21,9 @@ import (
 )
 
 func main() {
-	env := getEnv("APP_ENV", "development")
-	addr := getEnv("APP_HTTP_ADDR", ":8080")
-	dsn := strings.TrimSpace(os.Getenv("APP_DB_DSN"))
+	env := pkg.GetEnv("APP_ENV", "development")
+	addr := pkg.GetEnv("APP_HTTP_ADDR", ":8080")
+	dsn := pkg.GetEnv("APP_DB_DSN", "")
 	params := app.Params{
 		Env:      strings.ToLower(env),
 		HTTPAddr: addr,
@@ -54,11 +55,4 @@ func main() {
 	if err := application.Run(ctx); err != nil {
 		zap.L().Fatal("server error", zap.Error(err))
 	}
-}
-
-func getEnv(key, fallback string) string {
-	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
-		return value
-	}
-	return fallback
 }

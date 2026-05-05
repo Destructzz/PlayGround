@@ -10,6 +10,11 @@ type CreateComputerConfigurationRequest struct {
 	SpecsJSON []ComputerSpecificationEntry `json:"specs_json" binding:"required,min=1,dive"`
 }
 
+type ComputerConfiguration struct {
+	CreateComputerConfigurationRequest
+	ID int64 `json:"id"`
+}
+
 type PatchComputerConfigurationRequest struct {
 	ZoneTagID *int64                        `json:"zone_tag_id" binding:"omitempty"`
 	SpecsJSON *[]ComputerSpecificationEntry `json:"specs_json" binding:"omitempty"`

@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 )
 
@@ -102,7 +103,7 @@ func (p *Public) Lounge(c *gin.Context) {
 				ID:          s.ID,
 				Name:        s.Name,
 				Duration:    s.Duration,
-				Price:       s.Price.Int.String(),
+				Price:       formatNumeric(s.Price),
 				Currency:    s.Currency,
 				Description: s.Description.String,
 				DetailsJSON: parseJSON(s.DetailsJson),
@@ -160,7 +161,7 @@ func (p *Public) Event(c *gin.Context) {
 				ID:          s.ID,
 				Name:        s.Name,
 				Duration:    s.Duration,
-				Price:       s.Price.Int.String(),
+				Price:       formatNumeric(s.Price),
 				Currency:    s.Currency,
 				Description: s.Description.String,
 				DetailsJSON: parseJSON(s.DetailsJson),
@@ -286,7 +287,7 @@ func (p *Public) Gaming(c *gin.Context) {
 				ID:          s.ID,
 				Name:        s.Name,
 				Duration:    s.Duration,
-				Price:       s.Price.Int.String(),
+				Price:       formatNumeric(s.Price),
 				Currency:    s.Currency,
 				Description: s.Description.String,
 				DetailsJSON: parseJSON(s.DetailsJson),
@@ -392,4 +393,24 @@ func parseJSONArray(b []byte) json.RawMessage {
 		return json.RawMessage("[]")
 	}
 	return json.RawMessage(b)
+}
+
+func formatNumeric(value pgtype.Numeric) string {
+	if !value.Valid {
+		return ""
+	}
+
+	raw, err := value.Value()
+	if err != nil {
+		return ""
+	}
+
+	switch v := raw.(type) {
+	case string:
+		return v
+	case []byte:
+		return string(v)
+	default:
+		return ""
+	}
 }

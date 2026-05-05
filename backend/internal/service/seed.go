@@ -1,6 +1,7 @@
 package service
 
 import (
+	"backend/internal/domain"
 	"backend/internal/repo/sqlc"
 	"bytes"
 	"context"
@@ -19,11 +20,12 @@ type SeedService struct {
 }
 
 type SeedSnapshot struct {
-	SeedKey        string                       `json:"seed_key"`
-	Seeded         bool                         `json:"seeded"`
-	ZoneTags       []sqlc.ZoneTag               `json:"zone_tags"`
-	Configurations []sqlc.ComputerConfiguration `json:"configurations"`
-	Zones          []SeedZoneSnapshot           `json:"zones"`
+	SeedKey  string         `json:"seed_key"`
+	Seeded   bool           `json:"seeded"`
+	ZoneTags []sqlc.ZoneTag `json:"zone_tags"`
+	Configurations []domain.ComputerConfiguration `json:"configurations"`
+
+	Zones []SeedZoneSnapshot `json:"zones"`
 }
 
 type SeedZoneSnapshot struct {
@@ -83,17 +85,33 @@ func (s *SeedService) Get(ctx context.Context) (SeedSnapshot, error) {
 	}
 
 	seedZoneSnapshots := make([]SeedZoneSnapshot, 0, len(seedDefinitions))
-	seedConfigurations := make([]sqlc.ComputerConfiguration, 0, len(seedDefinitions))
+	seedConfigurations := make([]domain.ComputerConfiguration, 0, len(seedDefinitions))
 
 	for _, definition := range seedDefinitions {
+		specsJSON, err := json.Marshal(definition.Specs)
+		if err != nil {
+			return SeedSnapshot{}, err
+		}
+
 		tag, ok := tagByName[definition.Name]
 		if !ok {
 			continue
 		}
 
 		for _, cfg := range configs {
-			if cfg.ZoneTagsID == int64(tag.ID) && specsEqual(cfg.SpecsJson, mustJSON(definition.Specs)) {
-				seedConfigurations = append(seedConfigurations, cfg)
+			if cfg.ZoneTagsID == int64(tag.ID) && specsEqual(cfg.SpecsJson, specsJSON) {
+				var specs []domain.ComputerSpecificationEntry
+				if err := json.Unmarshal(cfg.SpecsJson, &specs); err != nil {
+					return SeedSnapshot{}, err
+				}
+
+				seedConfigurations = append(seedConfigurations, domain.ComputerConfiguration{				
+					CreateComputerConfigurationRequest: domain.CreateComputerConfigurationRequest{
+						ZoneTagID: cfg.ZoneTagsID,
+						SpecsJSON: specs,
+					},
+					ID: cfg.ID,
+				})
 				break
 			}
 		}
@@ -173,7 +191,16 @@ func (s *SeedService) Apply(ctx context.Context) (SeedSnapshot, error) {
 			tagByName[definition.Name] = tag
 		}
 
-		configSpecs := mustJSON(definition.Specs)
+		configSpecs, err := json.Marshal(definition.Specs)
+		if err != nil {
+			return SeedSnapshot{}, err
+		}
+
+		zoneDetails, err := json.Marshal(definition.ZoneDetails)
+		if err != nil {
+			return SeedSnapshot{}, err
+		}
+
 		configuration, found := findSeedConfiguration(configs, int64(tag.ID), configSpecs)
 		if !found {
 			configuration, err = q.CreateComputerConfiguration(ctx, sqlc.CreateComputerConfigurationParams{
@@ -214,7 +241,7 @@ func (s *SeedService) Apply(ctx context.Context) (SeedSnapshot, error) {
 					Bool:  true,
 					Valid: true,
 				},
-				DetailsJson: mustJSON(buildZoneDetails(definition.ZoneDetails)),
+				DetailsJson: zoneDetails,
 			})
 			if err != nil {
 				return SeedSnapshot{}, err
@@ -231,7 +258,7 @@ func (s *SeedService) Apply(ctx context.Context) (SeedSnapshot, error) {
 					Valid:  definition.Description != "",
 				},
 				IsActive:    true,
-				DetailsJson: mustJSON(buildZoneDetails(definition.ZoneDetails)),
+				DetailsJson: zoneDetails,
 			})
 			if err != nil {
 				return SeedSnapshot{}, err
@@ -250,7 +277,11 @@ func (s *SeedService) Apply(ctx context.Context) (SeedSnapshot, error) {
 				return SeedSnapshot{}, err
 			}
 
-			serviceDetails := mustJSON(map[string]any{"seed_key": gamingSeedKey})
+			serviceDetails, err := json.Marshal(map[string]any{"seed_key": gamingSeedKey})
+			if err != nil {
+				return SeedSnapshot{}, err
+			}
+
 			if _, err := q.CreateService(ctx, sqlc.CreateServiceParams{
 				Name:     definition.ServiceName,
 				ZoneID:   zone.ID,
@@ -388,11 +419,6 @@ func isSeedZone(details []byte) bool {
 	return seedKey == gamingSeedKey
 }
 
-func mustJSON(value any) []byte {
-	result, _ := json.Marshal(value)
-	return result
-}
-
 func specsEqual(left []byte, right []byte) bool {
 	var leftValue any
 	var rightValue any
@@ -409,22 +435,13 @@ func specsEqual(left []byte, right []byte) bool {
 	return bytes.Equal(leftJSON, rightJSON)
 }
 
-func buildZoneDetails(value map[string]any) map[string]any {
-	clone := make(map[string]any, len(value)+1)
-	for key, item := range value {
-		clone[key] = item
-	}
-	clone["seed_key"] = gamingSeedKey
-	return clone
-}
-
 var seedDefinitions = []seedTagDefinition{
 	{
 		Name:        "Standard",
 		ZoneName:    "Standard Arena",
 		Capacity:    10,
 		Description: "Надежные сборки для комфортной игры в любые современные проекты.",
-		ZoneDetails: map[string]any{"prefix": "БАЗОВАЯ", "title": "МОЩЬ", "hexColor": "#10b981"},
+		ZoneDetails: map[string]any{"prefix": "БАЗОВАЯ", "title": "МОЩЬ", "hexColor": "#10b981", "seed_key": gamingSeedKey},
 		ServiceName: "Standard",
 		Price:       "150",
 		Duration:    60,
@@ -443,7 +460,7 @@ var seedDefinitions = []seedTagDefinition{
 		ZoneName:    "VIP Arena",
 		Capacity:    6,
 		Description: "Премиальная зона для киберспортивной игры на максималках.",
-		ZoneDetails: map[string]any{"prefix": "БЕСКОМПРОМИССНАЯ", "title": "МОЩЬ", "hexColor": "#22d3ee"},
+		ZoneDetails: map[string]any{"prefix": "БЕСКОМПРОМИССНАЯ", "title": "МОЩЬ", "hexColor": "#22d3ee", "seed_key": gamingSeedKey},
 		ServiceName: "VIP",
 		Price:       "250",
 		Duration:    60,
@@ -462,7 +479,7 @@ var seedDefinitions = []seedTagDefinition{
 		ZoneName:    "Bootcamp Room",
 		Capacity:    5,
 		Description: "Изолированная тренировочная комната для команды.",
-		ZoneDetails: map[string]any{"prefix": "КОМАНДНАЯ", "title": "СИНЕРГИЯ", "hexColor": "#f97316"},
+		ZoneDetails: map[string]any{"prefix": "КОМАНДНАЯ", "title": "СИНЕРГИЯ", "hexColor": "#f97316", "seed_key": gamingSeedKey},
 		ServiceName: "Bootcamp",
 		Price:       "200",
 		Duration:    60,

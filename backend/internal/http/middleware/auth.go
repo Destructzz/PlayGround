@@ -23,7 +23,7 @@ const (
 // It reads the session cookie, validates it against the DB, and injects the user into the context.
 func AuthRequired(queries *sqlc.Queries) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, sessionID, ok := resolveSession(c, queries)
+		user, sessionID, ok := ResolveSession(c, queries)
 		if !ok {
 			response.NewResponseBuilder(
 				response.WithStatus(http.StatusUnauthorized),
@@ -41,7 +41,7 @@ func AuthRequired(queries *sqlc.Queries) gin.HandlerFunc {
 
 func AuthRequiredWithRole(queries *sqlc.Queries, roles ...sqlc.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, sessionID, ok := resolveSession(c, queries)
+		user, sessionID, ok := ResolveSession(c, queries)
 		if !ok {
 			response.NewResponseBuilder(
 				response.WithStatus(http.StatusUnauthorized),
@@ -81,7 +81,7 @@ func AuthRequiredWithRole(queries *sqlc.Queries, roles ...sqlc.Role) gin.Handler
 // Protected routes should use AuthRequired instead.
 func AuthOptional(queries *sqlc.Queries) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, sessionID, ok := resolveSession(c, queries)
+		user, sessionID, ok := ResolveSession(c, queries)
 		if ok {
 			c.Set(sessionUserKey, user)
 			c.Set(sessionIDKey, sessionID)
@@ -144,7 +144,7 @@ func isSecureRequest(c *gin.Context) bool {
 	return strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https")
 }
 
-func resolveSession(c *gin.Context, queries *sqlc.Queries) (sqlc.User, uuid.UUID, bool) {
+func ResolveSession(c *gin.Context, queries *sqlc.Queries) (sqlc.User, uuid.UUID, bool) {
 	cookie, err := c.Cookie(sessionCookieName)
 	if err != nil || cookie == "" {
 		return sqlc.User{}, uuid.UUID{}, false
