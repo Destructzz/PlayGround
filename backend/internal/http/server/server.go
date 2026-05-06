@@ -29,7 +29,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	tool := handlers.NewToolHandler(queries)
 
-	r.GET("/docs", tool.Docs)
+	r.GET("/docs", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), tool.Docs)
 	r.GET("/swagger/*any", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/openapi.json", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), tool.GetOpenAPI)
 

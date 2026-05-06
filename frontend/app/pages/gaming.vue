@@ -305,55 +305,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
-
-type GamingService = {
-  id: number
-  name: string
-  duration: number
-  price: string
-  currency: string
-  description: string
-  details_json?: unknown
-}
-
-type GamingPlace = {
-  id: number
-  label: string
-  configuration_id?: number | null
-  sort_order: number
-  is_active: boolean
-  specs?: unknown
-}
-
-type GamingZone = {
-  id: number
-  name: string
-  zone_type: string
-  zone_tag_id: number
-  capacity: number
-  description: string
-  is_active: boolean
-  details_json?: unknown
-  places: GamingPlace[]
-  services: GamingService[]
-}
-
-type GamingConfiguration = {
-  id: number
-  zone_tag_id: number
-  specs_json?: unknown
-}
-
-type GamingZoneTag = {
-  id: number
-  name: string
-}
-
-type GamingCatalogResponse = {
-  zone_tags?: GamingZoneTag[] | null
-  zones?: GamingZone[] | null
-  configurations?: GamingConfiguration[] | null
-}
+import { getGamingCatalog } from '~/api/catalog'
 
 type ClassSpec = {
   title: string
@@ -388,7 +340,7 @@ useHead({
   title: 'Игровая зона - PlayGround'
 })
 
-const { data: catalog, error } = await useAsyncData('gaming-catalog', () => $fetch<GamingCatalogResponse>('/api/v1/public/gaming'))
+const { data: catalog, error } = await useAsyncData('gaming-catalog', getGamingCatalog)
 
 const zoneColors = ['#10b981', '#22d3ee', '#f97316', '#a855f7', '#f43f5e']
 

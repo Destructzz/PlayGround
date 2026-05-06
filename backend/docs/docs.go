@@ -1924,6 +1924,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/docs": {
+            "get": {
+                "description": "Returns the Scalar documentation page for admin users",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Tool"
+                ],
+                "summary": "Get Tool Docs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "301": {
+                        "description": "Redirect to frontend",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/healthz": {
             "get": {
                 "description": "Returns service status and timestamp",
@@ -1939,6 +1965,32 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi.json": {
+            "get": {
+                "description": "Returns the generated OpenAPI specification for admin users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tool"
+                ],
+                "summary": "Get OpenAPI Spec",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "301": {
+                        "description": "Redirect to frontend",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }

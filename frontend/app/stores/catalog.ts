@@ -1,18 +1,29 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import {
+  getEventCatalog,
+  getGamingCatalog,
+  getHomeCatalog,
+  getLoungeCatalog
+} from '~/api/catalog'
+import type {
+  EventCatalogResponse,
+  GamingCatalogResponse,
+  HomeCatalogResponse,
+  LoungeCatalogResponse
+} from '~/api/types'
 
 export const useCatalogStore = defineStore('catalog', () => {
-  const homeData = ref<any>(null)
-  const gamingData = ref<any>(null)
-  const loungeData = ref<any>(null)
-  const eventData = ref<any>(null)
+  const homeData = ref<HomeCatalogResponse | null>(null)
+  const gamingData = ref<GamingCatalogResponse | null>(null)
+  const loungeData = ref<LoungeCatalogResponse | null>(null)
+  const eventData = ref<EventCatalogResponse | null>(null)
   const isLoading = ref(false)
 
   async function fetchHome() {
     isLoading.value = true
     try {
-      const { data } = await $fetch<any>('/api/v1/public/home')
-      homeData.value = data
+      homeData.value = await getHomeCatalog()
     } catch (e) {
       console.error('Failed to fetch home catalog', e)
     } finally {
@@ -23,8 +34,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   async function fetchGaming() {
     isLoading.value = true
     try {
-      const { data } = await $fetch<any>('/api/v1/public/gaming')
-      gamingData.value = data
+      gamingData.value = await getGamingCatalog()
     } catch (e) {
       console.error('Failed to fetch gaming catalog', e)
     } finally {
@@ -35,8 +45,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   async function fetchLounge() {
     isLoading.value = true
     try {
-      const { data } = await $fetch<any>('/api/v1/public/lounge')
-      loungeData.value = data
+      loungeData.value = await getLoungeCatalog()
     } catch (e) {
       console.error('Failed to fetch lounge catalog', e)
     } finally {
@@ -47,8 +56,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   async function fetchEvent() {
     isLoading.value = true
     try {
-      const { data } = await $fetch<any>('/api/v1/public/event')
-      eventData.value = data
+      eventData.value = await getEventCatalog()
     } catch (e) {
       console.error('Failed to fetch event catalog', e)
     } finally {

@@ -25,12 +25,17 @@ func AuthRequired(queries *sqlc.Queries) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, sessionID, ok := ResolveSession(c, queries)
 		if !ok {
+			cookie, err := c.Cookie(sessionCookieName)
+			zap.L().Warn("session not found", zap.Any("user", user), zap.Any("sessionID", sessionID), zap.Any("cookie", cookie), zap.Any("cookie_err", err))
 			response.NewResponseBuilder(
 				response.WithStatus(http.StatusUnauthorized),
 				response.WithError("unauthorized", "Authentication required", nil),
 			).JSON(c)
 			c.Abort()
 			return
+		}else{
+			cookie, err := c.Cookie(sessionCookieName)
+			zap.L().Warn("session not found", zap.Any("user", user), zap.Any("sessionID", sessionID), zap.Any("cookie", cookie), zap.Any("cookie_err", err))
 		}
 
 		c.Set(sessionUserKey, user)

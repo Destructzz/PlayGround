@@ -2021,6 +2021,23 @@ paths:
       summary: Patch zone
       tags:
       - zones
+  /docs:
+    get:
+      description: Returns the Scalar documentation page for admin users
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "301":
+          description: Redirect to frontend
+          schema:
+            type: string
+      summary: Get Tool Docs
+      tags:
+      - Tool
   /healthz:
     get:
       description: Returns service status and timestamp
@@ -2034,6 +2051,23 @@ paths:
       summary: Liveness check
       tags:
       - health
+  /openapi.json:
+    get:
+      description: Returns the generated OpenAPI specification for admin users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "301":
+          description: Redirect to frontend
+          schema:
+            type: string
+      summary: Get OpenAPI Spec
+      tags:
+      - Tool
   /readyz:
     get:
       description: Pings database and returns readiness status

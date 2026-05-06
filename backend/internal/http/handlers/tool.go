@@ -17,16 +17,12 @@ func NewToolHandler(q *sqlc.Queries) *ToolHandler {
 	return &ToolHandler{q: q}
 }
 
-// @Summary      Get Tool
-// @Description  Get tool
+// @Summary      Get Tool Docs
+// @Description  Returns the Scalar documentation page for admin users
 // @Tags         Tool
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  response.Response
-// @Failure      400  {object}  response.Response
-// @Failure      401  {object}  response.Response
-// @Failure      404  {object}  response.Response
-// @Failure      500  {object}  response.Response
+// @Produce      text/html
+// @Success      200  {file}    file
+// @Failure      301  {string}  string  "Redirect to frontend"
 // @Router       /docs [get]
 func (h *ToolHandler) Docs(c *gin.Context) {
 	user, _, ok := middleware.ResolveSession(c, h.q)
@@ -39,12 +35,11 @@ func (h *ToolHandler) Docs(c *gin.Context) {
 }
 
 // @Summary      Get OpenAPI Spec
-// @Description  Get openapi spec
+// @Description  Returns the generated OpenAPI specification for admin users
 // @Tags         Tool
-// @Accept       json
 // @Produce      json
-// @Success      200  {object}  response.Response
-// @Failure      401  {object}  response.Response
+// @Success      200  {file}    file
+// @Failure      301  {string}  string  "Redirect to frontend"
 // @Router       /openapi.json [get]
 func (h *ToolHandler) GetOpenAPI(c *gin.Context) {
 	user, _, ok := middleware.ResolveSession(c, h.q)
@@ -55,4 +50,3 @@ func (h *ToolHandler) GetOpenAPI(c *gin.Context) {
 
 	c.File("./docs/swagger.json")
 }
-

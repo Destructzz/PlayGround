@@ -79,6 +79,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { buildGoogleAuthUrl } from '~/api/auth'
 import { useAuthStore } from '~/stores/auth'
 
 useHead({
@@ -100,6 +101,6 @@ const returnTo = computed(() => {
   return '/'
 })
 
-const googleAuthUrl = computed(() => `${config.public.backendUrl.replace(/\/$/, '')}/api/v1/auth/google?${new URLSearchParams({ return_to: returnTo.value }).toString()}`)
+const googleAuthUrl = computed(() => buildGoogleAuthUrl(config.public.backendUrl, returnTo.value))
 const accountInitial = computed(() => displayName.value.charAt(0).toUpperCase())
 </script>

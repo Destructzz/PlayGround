@@ -1,23 +1,9 @@
-import { useRuntimeConfig } from '#app'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-
-type AuthUser = {
-  id: string
-  email: string
-  avatar_url: string
-  name: string
-  provider: string
-}
-
-type SessionResponse = {
-  authenticated?: boolean
-  user?: AuthUser | null
-}
+import { fetchAuthSession, logoutSession } from '~/api/auth'
+import type { AuthUser } from '~/api/types'
 
 export const useAuthStore = defineStore('auth', () => {
-  const config = useRuntimeConfig()
-  const backendUrl = config.public.backendUrl.replace(/\/$/, '')
   const user = ref<AuthUser | null>(null)
   const isAuthenticated = ref(false)
   const isLoading = ref(true)
@@ -29,9 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     isLoading.value = true
     try {
-      const data = await $fetch<SessionResponse>(`${backendUrl}/api/v1/auth/session`, {
-        credentials: 'include'
-      })
+      const data = await fetchAuthSession()
 
       if (data.authenticated) {
         isAuthenticated.value = true
@@ -51,10 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await $fetch(`${backendUrl}/api/v1/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      })
+      await logoutSession()
       isAuthenticated.value = false
       user.value = null
     } catch (e) {
