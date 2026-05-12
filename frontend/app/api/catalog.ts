@@ -3,7 +3,8 @@ import type {
   EventCatalogResponse,
   GamingCatalogResponse,
   HomeCatalogResponse,
-  LoungeCatalogResponse
+  LoungeCatalogResponse,
+  ShiftListResponse
 } from './types'
 
 const PUBLIC_API_PREFIX = '/api/v1/public'
@@ -22,4 +23,8 @@ export function getLoungeCatalog() {
 
 export function getEventCatalog() {
   return apiFetch<EventCatalogResponse>(`${PUBLIC_API_PREFIX}/event`)
+}
+
+export function getShiftByZoneTagId(zoneTagId: number) {
+  return apiFetch<ShiftListResponse>(`/api/v1/shift/zone-tag/${zoneTagId}`)
 }

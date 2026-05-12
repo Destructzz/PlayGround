@@ -52,6 +52,10 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	staff := handlers.NewStaff(staffService)
 	paymentService := service.NewPayment(queries)
 	payment := handlers.NewPayment(paymentService)
+	shiftService := service.NewShift(queries)
+	shift := handlers.NewShift(shiftService)
+	placeService := service.NewPlaceService(queries)
+	place := handlers.NewPlace(placeService)
 	public := handlers.NewPublic(queries)
 
 	r.GET("/healthz", health.Health)
@@ -86,6 +90,14 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	zoneScope.GET("/:id", zone.GetById)
 	zoneScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Delete)
 	zoneScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zone.Patch)
+
+	// Place CRUD
+	placeScope := api.Group("/place")
+	placeScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), place.Create)
+	placeScope.GET("", place.Get)
+	placeScope.GET("/:id", place.GetById)
+	placeScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), place.Delete)
+	placeScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), place.Patch)
 
 	zoneTagScope := api.Group("/zone-tag")
 	zoneTagScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), zoneTag.Create)
@@ -132,6 +144,15 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	paymentScope.GET("/:id", payment.GetById)
 	paymentScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Delete)
 	paymentScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), payment.Patch)
+
+	// Shift CRUD
+	shiftScope := api.Group("/shift")
+	shiftScope.GET("/zone-tag/:zone_tag_id", middleware.AuthOptional(queries), shift.GetByZoneTagID)
+	shiftScope.GET("", middleware.AuthOptional(queries), shift.Get)
+	shiftScope.GET("/:id", middleware.AuthOptional(queries), shift.GetByID)
+	shiftScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Create)
+	shiftScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Delete)
+	shiftScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Patch)
 
 	return r
 }

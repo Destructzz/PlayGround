@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"backend/internal/domain"
-	"backend/internal/http/middleware"
 	"backend/internal/http/response"
 	"backend/internal/service"
+	"backend/pkg"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -38,7 +37,7 @@ func NewBooking(bookingService *service.BookingService) *Booking {
 // @Failure     500 {object} response.ErrorResponse
 // @Router      /api/v1/booking [post]
 func (b *Booking) Create(c *gin.Context) {
-	user, ok := middleware.UserFromContext(c)
+	user, ok := pkg.UserFromContext(c)
 	if !ok {
 		response.NewResponseBuilder(
 			response.WithStatus(http.StatusUnauthorized),

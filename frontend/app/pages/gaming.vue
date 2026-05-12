@@ -264,38 +264,44 @@
             <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
               Выберите время
             </p>
-            <div class="flex overflow-x-auto pb-6 pt-4 px-4 -mx-4 -mt-2">
-              <div
-                v-for="(hour, k) in hours"
-                :key="'v1h'+k"
-                :class="getHourClass(k, hour)"
-                @click="toggleHour(k)"
-              >
-                <svg
-                  v-if="hour.taken"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                ><rect
-                  width="18"
-                  height="11"
-                  x="3"
-                  y="11"
-                  rx="2"
-                  ry="2"
-                /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                <span>{{ hour.time }}</span>
-              </div>
+            <div v-if="shiftLoading" class="text-sm text-zinc-500 py-4">
+              Загрузка расписания...
             </div>
-            <p class="text-xs text-zinc-500">
-              Слоты времени пока локальные: `public/gaming` ещё не отдаёт публичную занятость мест по часам.
-            </p>
+            <div v-else-if="!currentShiftInfo" class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
+              Для выбранной зоны нет активной или предстоящей смены.
+            </div>
+            <template v-else>
+
+              <div class="flex overflow-x-auto pb-6 pt-4 px-4 -mx-4 -mt-2">
+                <div
+                  v-for="(hour, k) in hours"
+                  :key="'v1h'+k"
+                  :class="getHourClass(k, hour)"
+                  @click="toggleHour(k)"
+                >
+                  <svg
+                    v-if="hour.taken"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ><rect
+                    width="18"
+                    height="11"
+                    x="3"
+                    y="11"
+                    rx="2"
+                    ry="2"
+                  /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  <span>{{ hour.time }}</span>
+                </div>
+              </div>
+            </template>
           </div>
         </transition>
       </section>
@@ -304,8 +310,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
-import { getGamingCatalog } from '~/api/catalog'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { getGamingCatalog, getShiftByZoneTagId } from '~/api/catalog'
+import type { ShiftListResponse } from '~/api/types'
 
 type ClassSpec = {
   title: string
@@ -496,32 +503,125 @@ const zones = computed<ZoneView[]>(() => userZones.value.map((zone) => ({
     }))
 })))
 
-const hours = Array.from({ length: 12 }, (_, i) => ({
-  time: `${10 + i}:00`,
-  label: i < 6 ? 'День' : 'Вечер',
-  taken: [2, 3, 8].includes(i)
-}))
+// --- Shift schedule per zone_tag ---
+const shiftLoading = ref(false)
+const currentShiftInfo = ref<ShiftListResponse | null>(null)
+const shiftCache = reactive<Record<number, ShiftListResponse | null>>({})
 
-const dates = Array.from({ length: 7 }, (_, i) => {
-  const d = new Date()
-  d.setDate(d.getDate() + i)
-
-  let label = ''
-  if (i === 0) label = 'Сегодня'
-  else if (i === 1) label = 'Завтра'
-  else {
-    const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
-    label = days[d.getDay()] || ''
-  }
-
-  return {
-    label,
-    date: d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
-  }
+const currentZoneTagId = computed(() => {
+  const zone = userZones.value[selectedZone.value]
+  return zone?.zone_tag_id ?? null
 })
 
+function formatShiftTime(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+}
+
+async function fetchShiftForZoneTag(zoneTagId: number) {
+  if (zoneTagId in shiftCache) {
+    currentShiftInfo.value = shiftCache[zoneTagId] ?? null
+    return
+  }
+
+  shiftLoading.value = true
+  try {
+    const result = await getShiftByZoneTagId(zoneTagId)
+    shiftCache[zoneTagId] = result
+    currentShiftInfo.value = result
+  } catch {
+    shiftCache[zoneTagId] = null
+    currentShiftInfo.value = null
+  } finally {
+    shiftLoading.value = false
+  }
+}
+
+watch(currentZoneTagId, (tagId) => {
+  currentShiftInfo.value = null
+  selectedHours.value = []
+  selectedDate.value = 0
+  if (tagId != null) {
+    fetchShiftForZoneTag(tagId)
+  }
+}, { immediate: true })
+
+// Only show dates that have at least one shift for the current zone_tag
+const dates = computed(() => {
+  const shifts = currentShiftInfo.value?.shifts ?? []
+
+  // Build a Set of unique date-keys that have shifts (YYYY-MM-DD local)
+  const shiftDays = new Set(
+    shifts.map(shift => {
+      const d = new Date(shift.start_time)
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    })
+  )
+
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    if (!shiftDays.has(key)) return null
+
+    let label = ''
+    if (i === 0) label = 'Сегодня'
+    else if (i === 1) label = 'Завтра'
+    else {
+      const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
+      label = days[d.getDay()] || ''
+    }
+
+    return {
+      label,
+      date: d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+      rawDate: d
+    }
+  }).filter(Boolean) as { label: string; date: string; rawDate: Date }[]
+})
+
+const hours = computed(() => {
+  if (!currentShiftInfo.value || !currentShiftInfo.value.shifts || currentShiftInfo.value.shifts.length === 0) return []
+
+  const selectedRawDate = dates[selectedDate.value]?.rawDate
+  if (!selectedRawDate) return []
+
+  const activeShifts = currentShiftInfo.value.shifts.filter(shift => {
+    const shiftStart = new Date(shift.start_time)
+    return shiftStart.getFullYear() === selectedRawDate.getFullYear() &&
+           shiftStart.getMonth() === selectedRawDate.getMonth() &&
+           shiftStart.getDate() === selectedRawDate.getDate()
+  })
+
+  if (activeShifts.length === 0) return []
+  
+  // Find min start and max end across all shifts for the selected date
+  let minStartHour = 24
+  let maxEndHour = 0
+  
+  for (const shift of activeShifts) {
+    const start = new Date(shift.start_time)
+    const end = new Date(shift.end_time)
+    
+    minStartHour = Math.min(minStartHour, start.getHours())
+    maxEndHour = Math.max(maxEndHour, end.getHours() || 24)
+  }
+  
+  if (minStartHour >= maxEndHour) return []
+
+  const count = maxEndHour - minStartHour
+
+  return Array.from({ length: count }, (_, i) => ({
+    time: `${(minStartHour + i).toString().padStart(2, '0')}:00`,
+    label: (minStartHour + i) < 18 ? 'День' : 'Вечер',
+    taken: false
+  }))
+})
+
+
+
 function toggleHour(index: number) {
-  if (hours[index]?.taken) return
+  if (hours.value[index]?.taken) return
   const pos = selectedHours.value.indexOf(index)
   if (pos >= 0) {
     selectedHours.value.splice(pos, 1)
@@ -530,7 +630,7 @@ function toggleHour(index: number) {
   }
 }
 
-function getHourClass(k: number, hour: (typeof hours)[number]) {
+function getHourClass(k: number, hour: { time: string; label: string; taken: boolean }) {
   const isSelected = selectedHours.value.includes(k)
   const isPrevSelected = isSelected && selectedHours.value.includes(k - 1)
   const isNextSelected = isSelected && selectedHours.value.includes(k + 1)

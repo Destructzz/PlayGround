@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"backend/internal/http/middleware"
 	"backend/internal/repo/sqlc"
 	"backend/pkg"
 	"net/http"
@@ -25,7 +24,7 @@ func NewToolHandler(q *sqlc.Queries) *ToolHandler {
 // @Failure      301  {string}  string  "Redirect to frontend"
 // @Router       /docs [get]
 func (h *ToolHandler) Docs(c *gin.Context) {
-	user, _, ok := middleware.ResolveSession(c, h.q)
+	user, _, ok := pkg.ResolveSession(c, h.q)
 	if !ok || user.Role != sqlc.RoleAdmin {
 		c.Redirect(http.StatusMovedPermanently, pkg.GetEnv("FRONTEND_URL", "http://localhost:3000"))
 		return
@@ -42,7 +41,7 @@ func (h *ToolHandler) Docs(c *gin.Context) {
 // @Failure      301  {string}  string  "Redirect to frontend"
 // @Router       /openapi.json [get]
 func (h *ToolHandler) GetOpenAPI(c *gin.Context) {
-	user, _, ok := middleware.ResolveSession(c, h.q)
+	user, _, ok := pkg.ResolveSession(c, h.q)
 	if !ok || user.Role != sqlc.RoleAdmin {
 		c.Redirect(http.StatusMovedPermanently, pkg.GetEnv("FRONTEND_URL", "http://localhost:3000"))
 		return

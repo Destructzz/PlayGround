@@ -1,7 +1,7 @@
 // @title           PlayGround API
 // @version         1.0
 // @description     Backend API for PlayGround
-// @host            localhost:8080
+// @host            localhost
 // @BasePath        /
 package main
 

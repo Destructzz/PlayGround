@@ -113,6 +113,19 @@ CREATE TABLE IF NOT EXISTS staff (
     deleted_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS shifts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    zone_tag_id BIGINT REFERENCES zone_tags(id) ON DELETE SET NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ,
+    CONSTRAINT shifts_valid_time_range CHECK (end_time > start_time)
+);
+
 CREATE TABLE IF NOT EXISTS payments (
     id BIGSERIAL PRIMARY KEY,
     booking_id BIGINT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,

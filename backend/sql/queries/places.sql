@@ -18,6 +18,23 @@ RETURNING id, zone_id, label, configuration_id, sort_order, is_active, created_a
 DELETE FROM zone_places
 WHERE id = $1;
 
+-- name: UpdateZonePlace :one
+UPDATE zone_places
+SET
+  label = COALESCE(sqlc.narg(label), label),
+  configuration_id = COALESCE(sqlc.narg(configuration_id), configuration_id),
+  sort_order = COALESCE(sqlc.narg(sort_order), sort_order),
+  is_active = COALESCE(sqlc.narg(is_active), is_active),
+  updated_at = NOW()
+WHERE id = sqlc.arg(id)
+RETURNING id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at;
+
+-- name: GetAllZonePlaces :many
+SELECT id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at
+FROM zone_places
+ORDER BY sort_order, id;
+
+
 -- name: ListActiveZonePlaces :many
 SELECT zp.id, zp.zone_id, zp.label, zp.configuration_id, zp.sort_order, zp.is_active, zp.created_at, zp.updated_at
 FROM zone_places zp

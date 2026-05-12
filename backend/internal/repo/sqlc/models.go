@@ -441,6 +441,18 @@ type Session struct {
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 }
 
+type Shift struct {
+	ID        int64              `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	ZoneTagID pgtype.Int8        `json:"zone_tag_id"`
+	StartTime pgtype.Timestamptz `json:"start_time"`
+	EndTime   pgtype.Timestamptz `json:"end_time"`
+	Note      pgtype.Text        `json:"note"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
 type SiteSetting struct {
 	ID               int32              `json:"id"`
 	SettingsJson     []byte             `json:"settings_json"`

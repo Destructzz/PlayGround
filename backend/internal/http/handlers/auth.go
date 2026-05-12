@@ -6,6 +6,7 @@ import (
 	"backend/internal/http/response"
 	"backend/internal/repo/sqlc"
 	"backend/internal/service"
+	"backend/pkg"
 	"net/http"
 	"net/url"
 	"os"
@@ -108,17 +109,7 @@ func (a *Auth) Callback(c *gin.Context) {
 	}
 
 	// Set session cookie
-	sessionIDBytes, _ := session.ID.Value()
-	sessionIDStr := ""
-	if v, ok := sessionIDBytes.([16]byte); ok {
-		var pgUUID pgtype.UUID
-		pgUUID.Bytes = v
-		pgUUID.Valid = true
-		sessionIDStr = pgUUID.String()
-	}
-	if sessionIDStr == "" {
-		sessionIDStr = session.ID.String()
-	}
+	sessionIDStr := pkg.UUIDString(session.ID)
 	middleware.SetSessionCookie(c, sessionIDStr)
 
 	// Redirect to return_to or frontend root
@@ -146,7 +137,7 @@ func (a *Auth) Callback(c *gin.Context) {
 // @Success     200 {object} map[string]interface{}
 // @Router      /api/v1/auth/session [get]
 func (a *Auth) Session(c *gin.Context) {
-	user, ok := middleware.UserFromContext(c)
+	user, ok := pkg.UserFromContext(c)
 	if !ok {
 		response.NewResponseBuilder(
 			response.WithData("authenticated", false),
@@ -158,7 +149,7 @@ func (a *Auth) Session(c *gin.Context) {
 	response.NewResponseBuilder(
 		response.WithData("authenticated", true),
 		response.WithData("user", response.AuthUserResponse{
-			ID:        user.ID.String(),
+			ID:        pkg.UUIDString(user.ID),
 			Email:     user.Email,
 			AvatarURL: user.AvatarUrl.String,
 			Name:      user.FullName,
@@ -174,7 +165,7 @@ func (a *Auth) Session(c *gin.Context) {
 // @Success     204
 // @Router      /api/v1/auth/logout [post]
 func (a *Auth) Logout(c *gin.Context) {
-	sessionID, ok := middleware.SessionIDFromContext(c)
+	sessionID, ok := pkg.SessionIDFromContext(c)
 	if ok {
 		var pgSessionID pgtype.UUID
 		_ = pgSessionID.Scan(sessionID.String())

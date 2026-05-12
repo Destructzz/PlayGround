@@ -94,6 +94,22 @@ definitions:
     - currency
     - payment_method
     type: object
+  domain.CreatePlaceRequest:
+    properties:
+      configuration_id:
+        type: integer
+      is_active:
+        type: boolean
+      label:
+        type: string
+      sort_order:
+        type: integer
+      zone_id:
+        type: integer
+    required:
+    - label
+    - zone_id
+    type: object
   domain.CreateServiceRequest:
     properties:
       currency:
@@ -117,6 +133,20 @@ definitions:
     - name
     - price
     - zone_id
+    type: object
+  domain.CreateShiftRequest:
+    properties:
+      end_time:
+        type: string
+      note:
+        type: string
+      start_time:
+        type: string
+      zone_tag_id:
+        type: integer
+    required:
+    - end_time
+    - start_time
     type: object
   domain.CreateStaffRequest:
     properties:
@@ -237,6 +267,28 @@ definitions:
         - paid
         - failed
         - refunded
+    type: object
+  domain.PatchPlaceRequest:
+    properties:
+      configuration_id:
+        type: integer
+      is_active:
+        type: boolean
+      label:
+        type: string
+      sort_order:
+        type: integer
+    type: object
+  domain.PatchShiftRequest:
+    properties:
+      end_time:
+        type: string
+      note:
+        type: string
+      start_time:
+        type: string
+      zone_tag_id:
+        type: integer
     type: object
   domain.PatchStaffRequest:
     properties:
@@ -387,7 +439,24 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
+  response.DeletePlaceResponse:
+    properties:
+      id:
+        type: integer
+    type: object
   response.DeleteServiceResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.DeleteShiftResponse:
     properties:
       id:
         example: 1
@@ -520,6 +589,45 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
+  response.PlaceDoc:
+    properties:
+      configuration_id:
+        example: 1
+        type: integer
+      created_at:
+        example: "2026-01-19T15:37:27.514Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      label:
+        example: PC-1
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      updated_at:
+        example: "2026-01-19T15:37:27.514Z"
+        type: string
+      zone_id:
+        example: 2
+        type: integer
+    type: object
+  response.PlaceListResponse:
+    properties:
+      places:
+        items:
+          $ref: '#/definitions/response.PlaceDoc'
+        type: array
+    type: object
+  response.PlaceResponse:
+    properties:
+      place:
+        $ref: '#/definitions/response.PlaceDoc'
+    type: object
   response.ServiceDoc:
     properties:
       created_at:
@@ -575,6 +683,83 @@ definitions:
         $ref: '#/definitions/response.ServiceDoc'
       timestamp:
         example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ShiftDoc:
+    properties:
+      created_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      end_time:
+        example: "2026-03-22T18:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      note:
+        example: Front desk day shift
+        type: string
+      start_time:
+        example: "2026-03-22T09:00:00Z"
+        type: string
+      updated_at:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+      user:
+        $ref: '#/definitions/response.ShiftUserDoc'
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      zone_tag_id:
+        example: 1
+        type: integer
+    type: object
+  response.ShiftListResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      shifts:
+        items:
+          $ref: '#/definitions/response.ShiftDoc'
+        type: array
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ShiftResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      shift:
+        $ref: '#/definitions/response.ShiftDoc'
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ShiftUserDoc:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      email:
+        example: ada@example.com
+        type: string
+      full_name:
+        example: Ada Lovelace
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      phone:
+        example: "+79991234567"
+        type: string
+      role:
+        example: admin
         type: string
     type: object
   response.StaffDoc:
@@ -740,7 +925,7 @@ definitions:
     - ZoneTypeEvent
     - ZoneTypeLounge
     - ZoneTypeSys
-host: localhost:8080
+host: localhost
 info:
   contact: {}
   description: Backend API for PlayGround
@@ -1283,6 +1468,150 @@ paths:
       summary: Ping
       tags:
       - health
+  /api/v1/place:
+    get:
+      description: Returns all places
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PlaceListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List places
+      tags:
+      - places
+    post:
+      consumes:
+      - application/json
+      description: Creates a place from JSON payload
+      parameters:
+      - description: Place payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreatePlaceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PlaceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create place
+      tags:
+      - places
+  /api/v1/place/{id}:
+    delete:
+      description: Deletes place by id
+      parameters:
+      - description: Place ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DeletePlaceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete place
+      tags:
+      - places
+    get:
+      description: Returns place by id from path param
+      parameters:
+      - description: Place ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PlaceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get place by id
+      tags:
+      - places
+    patch:
+      consumes:
+      - application/json
+      description: Partially updates place fields by id
+      parameters:
+      - description: Place ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Place patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchPlaceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PlaceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch place
+      tags:
+      - places
   /api/v1/pong:
     get:
       description: Returns ping with timestamp
@@ -1565,6 +1894,187 @@ paths:
       summary: Patch service
       tags:
       - services
+  /api/v1/shift:
+    get:
+      description: Returns all shifts with creator user data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ShiftListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List shifts
+      tags:
+      - shifts
+    post:
+      consumes:
+      - application/json
+      description: Creates a shift from JSON payload and attaches the current authenticated
+        admin user
+      parameters:
+      - description: Shift payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateShiftRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.ShiftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create shift
+      tags:
+      - shifts
+  /api/v1/shift/{id}:
+    delete:
+      description: Soft-deletes shift by id
+      parameters:
+      - description: Shift ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DeleteShiftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete shift
+      tags:
+      - shifts
+    get:
+      description: Returns shift by id with creator user data
+      parameters:
+      - description: Shift ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ShiftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get shift by id
+      tags:
+      - shifts
+    patch:
+      consumes:
+      - application/json
+      description: Partially updates shift fields by id
+      parameters:
+      - description: Shift ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Shift patch payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchShiftRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ShiftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Patch shift
+      tags:
+      - shifts
+  /api/v1/shift/zone-tag/{zone_tag_id}:
+    get:
+      description: Returns all upcoming and active shifts for a given zone_tag_id
+      parameters:
+      - description: Zone Tag ID
+        format: int64
+        in: path
+        name: zone_tag_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ShiftListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get shifts by zone tag id
+      tags:
+      - shifts
   /api/v1/staff:
     get:
       description: Returns all staff members

@@ -1,0 +1,1 @@
+ALTER TABLE shifts ADD COLUMN zone_tag_id BIGINT REFERENCES zone_tags(id) ON DELETE SET NULL;

@@ -85,3 +85,29 @@ export interface GamingCatalogResponse extends ApiResponseMeta {
   zones: GamingZone[]
   configurations: GamingConfiguration[]
 }
+
+export interface ShiftUser {
+  id: string
+  full_name: string
+  email: string
+  avatar_url?: string | null
+  phone?: string | null
+  role: string
+  is_active: boolean
+}
+
+export interface ShiftSchedule {
+  id: number
+  user_id: string
+  zone_tag_id?: number | null
+  start_time: string
+  end_time: string
+  note?: string | null
+  created_at: string
+  updated_at: string
+  user: ShiftUser
+}
+
+export interface ShiftListResponse extends ApiResponseMeta {
+  shifts: ShiftSchedule[]
+}

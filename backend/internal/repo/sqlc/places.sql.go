@@ -133,6 +133,41 @@ func (q *Queries) DeleteZonePlace(ctx context.Context, id int64) (int64, error) 
 	return result.RowsAffected(), nil
 }
 
+const getAllZonePlaces = `-- name: GetAllZonePlaces :many
+SELECT id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at
+FROM zone_places
+ORDER BY sort_order, id
+`
+
+func (q *Queries) GetAllZonePlaces(ctx context.Context) ([]ZonePlace, error) {
+	rows, err := q.db.Query(ctx, getAllZonePlaces)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ZonePlace
+	for rows.Next() {
+		var i ZonePlace
+		if err := rows.Scan(
+			&i.ID,
+			&i.ZoneID,
+			&i.Label,
+			&i.ConfigurationID,
+			&i.SortOrder,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getZonePlaceByID = `-- name: GetZonePlaceByID :one
 SELECT id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at
 FROM zone_places
@@ -225,4 +260,46 @@ func (q *Queries) ListZonePlaces(ctx context.Context, zoneID int64) ([]ZonePlace
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateZonePlace = `-- name: UpdateZonePlace :one
+UPDATE zone_places
+SET
+  label = COALESCE($1, label),
+  configuration_id = COALESCE($2, configuration_id),
+  sort_order = COALESCE($3, sort_order),
+  is_active = COALESCE($4, is_active),
+  updated_at = NOW()
+WHERE id = $5
+RETURNING id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at
+`
+
+type UpdateZonePlaceParams struct {
+	Label           pgtype.Text `json:"label"`
+	ConfigurationID pgtype.Int8 `json:"configuration_id"`
+	SortOrder       pgtype.Int4 `json:"sort_order"`
+	IsActive        pgtype.Bool `json:"is_active"`
+	ID              int64       `json:"id"`
+}
+
+func (q *Queries) UpdateZonePlace(ctx context.Context, arg UpdateZonePlaceParams) (ZonePlace, error) {
+	row := q.db.QueryRow(ctx, updateZonePlace,
+		arg.Label,
+		arg.ConfigurationID,
+		arg.SortOrder,
+		arg.IsActive,
+		arg.ID,
+	)
+	var i ZonePlace
+	err := row.Scan(
+		&i.ID,
+		&i.ZoneID,
+		&i.Label,
+		&i.ConfigurationID,
+		&i.SortOrder,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
