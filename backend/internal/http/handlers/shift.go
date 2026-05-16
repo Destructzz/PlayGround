@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
+	"math"
+	"time"
 )
 
 type Shift struct {
@@ -94,8 +96,15 @@ func (s *Shift) Get(c *gin.Context) {
 			response.WithData("shifts", domain.NewShiftListForAdmin(shifts)),
 		).JSON(c)
 	} else {
+		now := time.Now()
+		shiftViews := make([]domain.ShiftViewForUser, 0)
+		for _, shift := range shifts {
+			if shift.Shift.EndTime.Time.After(now) {
+				shiftViews = append(shiftViews, domain.NewShiftViewForUser(shift.Shift))
+			}
+		}
 		response.NewResponseBuilder(
-			response.WithData("shifts", domain.NewShiftListForUser(shifts)),
+			response.WithData("shifts", shiftViews),
 		).JSON(c)
 	}
 }
@@ -186,24 +195,40 @@ func (s *Shift) GetByZoneTagID(c *gin.Context) {
 		return
 	}
 
-	user, ok := pkg.UserFromContext(c)
-	if ok && user.Role == sqlc.RoleAdmin {
-		shiftViews := make([]domain.ShiftViewForAdmin, 0, len(shifts))
-		for _, shift := range shifts {
-			shiftViews = append(shiftViews, domain.NewShiftViewForAdmin(shift.Shift, shift.User))
+	now := time.Now()
+	durations, _ := s.shiftService.GetServiceDurationsByZoneTagID(c.Request.Context(), zoneTagID)
+	var step int32 = 60 // Default to 60 minutes
+	if len(durations) > 0 {
+		step = durations[0]
+		for _, d := range durations {
+			if d < step {
+				step = d
+			}
 		}
-		response.NewResponseBuilder(
-			response.WithData("shifts", shiftViews),
-		).JSON(c)
-	} else {
-		shiftViews := make([]domain.ShiftViewForUser, 0, len(shifts))
-		for _, shift := range shifts {
-			shiftViews = append(shiftViews, domain.NewShiftViewForUser(shift.Shift))
-		}
-		response.NewResponseBuilder(
-			response.WithData("shifts", shiftViews),
-		).JSON(c)
 	}
+
+	shiftViews := make([]domain.ShiftViewForUser, 0)
+	for _, shift := range shifts {
+		// Show shift only if it hasn't ended yet
+		if shift.Shift.EndTime.Time.After(now) {
+			sView := domain.NewShiftViewForUser(shift.Shift)
+
+			// If shift has started, adjust start_time to the next available slot
+			if sView.StartTime.Before(now) {
+				diff := now.Sub(sView.StartTime)
+				intervals := int64(math.Ceil(diff.Minutes() / float64(step)))
+				sView.StartTime = sView.StartTime.Add(time.Duration(intervals*int64(step)) * time.Minute)
+			}
+
+			// Only add if there's still time left in the shift after adjustment
+			if sView.StartTime.Before(sView.EndTime) {
+				shiftViews = append(shiftViews, sView)
+			}
+		}
+	}
+	response.NewResponseBuilder(
+		response.WithData("shifts", shiftViews),
+	).JSON(c)
 }
 
 // Patch updates shift by id.

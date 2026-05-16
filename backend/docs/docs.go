@@ -1098,6 +1098,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/public/gaming/availability": {
+            "get": {
+                "description": "Returns booked place intervals for a gaming zone on the selected date",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Gaming availability",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "zone_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date in YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/public/home": {
             "get": {
                 "description": "Returns homepage summaries for gaming/lounge/event",
@@ -3708,6 +3757,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Large hall"
+                },
+                "details_json": {
+                    "type": "object"
                 },
                 "id": {
                     "type": "integer",

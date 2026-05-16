@@ -5,6 +5,7 @@ import (
 
 	"backend/internal/domain"
 	"backend/internal/repo/sqlc"
+	"backend/pkg"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -17,7 +18,7 @@ func NewZone(queries *sqlc.Queries) *ZoneService {
 	return &ZoneService{queries: queries}
 }
 
-func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneRequest) (sqlc.Zone, error) {
+func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneRequest) (domain.Zone, error) {
 	isActive := true
 	if dto.IsActive != nil {
 		isActive = *dto.IsActive
@@ -27,13 +28,13 @@ func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneReque
 		detailsJSON = []byte(dto.DetailsJSON)
 	}
 
-	return z.queries.CreateZone(
+	zone, err := z.queries.CreateZone(
 		ctx,
 		sqlc.CreateZoneParams{
-			Name:     dto.Name,
-			ZoneType: dto.Type,
+			Name:      dto.Name,
+			ZoneType:  dto.Type,
 			ZoneTagID: dto.ZoneTagID,
-			Capacity: int32(dto.Capacity),
+			Capacity:  int32(dto.Capacity),
 			Description: pgtype.Text{
 				String: dto.Description,
 				Valid:  dto.Description != "",
@@ -42,21 +43,37 @@ func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneReque
 			DetailsJson: detailsJSON,
 		},
 	)
+	if err != nil {
+		return domain.Zone{}, err
+	}
+	return mapZoneToDomain(zone), nil
 }
 
-func (z *ZoneService) GetZones(ctx context.Context) ([]sqlc.Zone, error) {
-	return z.queries.ListZones(ctx)
+func (z *ZoneService) GetZones(ctx context.Context) ([]domain.Zone, error) {
+	zones, err := z.queries.ListZones(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.Zone, 0, len(zones))
+	for _, zone := range zones {
+		result = append(result, mapZoneToDomain(zone))
+	}
+	return result, nil
 }
 
-func (z *ZoneService) GetZoneByID(ctx context.Context, id int64) (sqlc.Zone, error) {
-	return z.queries.GetZoneByID(ctx, id)
+func (z *ZoneService) GetZoneByID(ctx context.Context, id int64) (domain.Zone, error) {
+	zone, err := z.queries.GetZoneByID(ctx, id)
+	if err != nil {
+		return domain.Zone{}, err
+	}
+	return mapZoneToDomain(zone), nil
 }
 
 func (z *ZoneService) DeleteByID(ctx context.Context, id int64) (int64, error) {
 	return z.queries.DeleteZone(ctx, id)
 }
 
-func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZoneRequest) (sqlc.Zone, error) {
+func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZoneRequest) (domain.Zone, error) {
 	params := sqlc.PatchZoneParams{ID: id}
 	if dto.Name != nil {
 		params.Name = pgtype.Text{
@@ -98,5 +115,24 @@ func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZ
 		params.DetailsJson = []byte(*dto.DetailsJSON)
 	}
 
-	return z.queries.PatchZone(ctx, params)
+	zone, err := z.queries.PatchZone(ctx, params)
+	if err != nil {
+		return domain.Zone{}, err
+	}
+	return mapZoneToDomain(zone), nil
+}
+
+func mapZoneToDomain(z sqlc.Zone) domain.Zone {
+	return domain.Zone{
+		ID:          z.ID,
+		Name:        z.Name,
+		ZoneType:    z.ZoneType,
+		ZoneTagID:   z.ZoneTagID,
+		Capacity:    z.Capacity,
+		Description: z.Description.String,
+		IsActive:    z.IsActive,
+		DetailsJSON: pkg.JSONOrObject(z.DetailsJson),
+		CreatedAt:   z.CreatedAt.Time,
+		UpdatedAt:   z.UpdatedAt.Time,
+	}
 }

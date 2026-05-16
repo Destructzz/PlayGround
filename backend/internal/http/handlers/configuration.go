@@ -3,9 +3,7 @@ package handlers
 import (
 	"backend/internal/domain"
 	"backend/internal/http/response"
-	"backend/internal/repo/sqlc"
 	"backend/internal/service"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -17,12 +15,6 @@ import (
 
 type ComputerConfiguration struct {
 	service *service.ComputerConfigurationService
-}
-
-type computerConfigurationResponse struct {
-	ID        int64           `json:"id"`
-	ZoneTagID int64           `json:"zone_tag_id"`
-	SpecsJSON json.RawMessage `json:"specs_json"`
 }
 
 func NewComputerConfiguration(service *service.ComputerConfigurationService) *ComputerConfiguration {
@@ -63,7 +55,7 @@ func (h *ComputerConfiguration) Create(c *gin.Context) {
 
 	response.NewResponseBuilder(
 		response.WithStatus(http.StatusCreated),
-		response.WithData("configuration", toComputerConfigurationResponse(item)),
+		response.WithData("configuration", item),
 	).JSON(c)
 }
 
@@ -87,7 +79,7 @@ func (h *ComputerConfiguration) Get(c *gin.Context) {
 	}
 
 	response.NewResponseBuilder(
-		response.WithData("configurations", toComputerConfigurationResponses(items)),
+		response.WithData("configurations", items),
 	).JSON(c)
 }
 
@@ -127,7 +119,7 @@ func (h *ComputerConfiguration) GetByID(c *gin.Context) {
 	}
 
 	response.NewResponseBuilder(
-		response.WithData("configuration", toComputerConfigurationResponse(item)),
+		response.WithData("configuration", item),
 	).JSON(c)
 }
 
@@ -210,7 +202,7 @@ func (h *ComputerConfiguration) Patch(c *gin.Context) {
 	}
 
 	response.NewResponseBuilder(
-		response.WithData("configuration", toComputerConfigurationResponse(item)),
+		response.WithData("configuration", item),
 	).JSON(c)
 }
 
@@ -234,20 +226,4 @@ func parseInt64Param(c *gin.Context, name string) (int64, bool) {
 	}
 
 	return id, true
-}
-
-func toComputerConfigurationResponse(item sqlc.ComputerConfiguration) computerConfigurationResponse {
-	return computerConfigurationResponse{
-		ID:        item.ID,
-		ZoneTagID: item.ZoneTagsID,
-		SpecsJSON: parseJSONArray(item.SpecsJson),
-	}
-}
-
-func toComputerConfigurationResponses(items []sqlc.ComputerConfiguration) []computerConfigurationResponse {
-	result := make([]computerConfigurationResponse, 0, len(items))
-	for _, item := range items {
-		result = append(result, toComputerConfigurationResponse(item))
-	}
-	return result
 }

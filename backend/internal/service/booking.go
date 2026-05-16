@@ -15,6 +15,13 @@ var (
 	ErrBookingOverlap       = errors.New("booking overlaps with existing booking")
 	ErrPlaceUnavailable     = errors.New("gaming place is unavailable for this time")
 	ErrCapacityExceeded     = errors.New("participants exceed zone capacity for this time")
+	ErrInvalidBookingRange  = errors.New("booking time range is invalid")
+	ErrServiceZoneMismatch  = errors.New("service does not belong to zone")
+	ErrPlaceZoneMismatch    = errors.New("place does not belong to zone")
+	ErrInactiveService      = errors.New("service is inactive")
+	ErrInactivePlace        = errors.New("place is inactive")
+	ErrInvalidServiceWindow = errors.New("booking duration must match service duration")
+	ErrPastBooking          = errors.New("cannot book in the past")
 )
 
 type BookingService struct {
@@ -38,28 +45,65 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, 
 		return sqlc.Booking{}, err
 	}
 
-	startTZ := pgtype.Timestamptz{Time: startTime, Valid: true}
-	endTZ := pgtype.Timestamptz{Time: endTime, Valid: true}
+	if !startTime.Before(endTime) {
+		return sqlc.Booking{}, ErrInvalidBookingRange
+	}
 
-	// Check zone/service overlap
-	overlapCount, err := b.queries.CheckZoneBookingOverlap(ctx, sqlc.CheckZoneBookingOverlapParams{
-		ZoneID:    dto.ZoneID,
-		ServiceID: dto.ServiceID,
-		EndTime:   endTZ,
-		StartTime: startTZ,
-	})
+	if startTime.Before(time.Now()) {
+		return sqlc.Booking{}, ErrPastBooking
+	}
+
+	serviceEntity, err := b.queries.GetServiceByID(ctx, dto.ServiceID)
 	if err != nil {
 		return sqlc.Booking{}, err
 	}
-	if overlapCount > 0 {
-		return sqlc.Booking{}, ErrBookingOverlap
+	if serviceEntity.ZoneID != dto.ZoneID {
+		return sqlc.Booking{}, ErrServiceZoneMismatch
+	}
+	if !serviceEntity.IsActive {
+		return sqlc.Booking{}, ErrInactiveService
+	}
+
+	serviceDuration := time.Duration(serviceEntity.Duration) * time.Minute
+	if !startTime.Add(serviceDuration).Equal(endTime) {
+		return sqlc.Booking{}, ErrInvalidServiceWindow
+	}
+
+	startTZ := pgtype.Timestamptz{Time: startTime, Valid: true}
+	endTZ := pgtype.Timestamptz{Time: endTime, Valid: true}
+
+	if dto.PlaceID == nil {
+		// Zone-level overlap is only relevant for bookings without a dedicated place.
+		overlapCount, err := b.queries.CheckZoneBookingOverlap(ctx, sqlc.CheckZoneBookingOverlapParams{
+			ZoneID:    dto.ZoneID,
+			ServiceID: dto.ServiceID,
+			EndTime:   endTZ,
+			StartTime: startTZ,
+		})
+		if err != nil {
+			return sqlc.Booking{}, err
+		}
+		if overlapCount > 0 {
+			return sqlc.Booking{}, ErrBookingOverlap
+		}
 	}
 
 	// Check place availability if place_id is provided
 	if dto.PlaceID != nil {
+		placeEntity, err := b.queries.GetZonePlaceByID(ctx, *dto.PlaceID)
+		if err != nil {
+			return sqlc.Booking{}, err
+		}
+		if placeEntity.ZoneID != dto.ZoneID {
+			return sqlc.Booking{}, ErrPlaceZoneMismatch
+		}
+		if !placeEntity.IsActive {
+			return sqlc.Booking{}, ErrInactivePlace
+		}
+
 		placeOverlap, err := b.queries.CheckPlaceBookingOverlap(ctx, sqlc.CheckPlaceBookingOverlapParams{
-			PlaceID: pgtype.Int8{Int64: *dto.PlaceID, Valid: true},
-			EndTime: endTZ,
+			PlaceID:   pgtype.Int8{Int64: *dto.PlaceID, Valid: true},
+			EndTime:   endTZ,
 			StartTime: startTZ,
 		})
 		if err != nil {
@@ -122,6 +166,10 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, 
 
 func (b *BookingService) ListBookings(ctx context.Context) ([]sqlc.Booking, error) {
 	return b.queries.ListBookings(ctx)
+}
+
+func (b *BookingService) ListBookingsByUserID(ctx context.Context, userID pgtype.UUID) ([]sqlc.Booking, error) {
+	return b.queries.ListBookingsByUser(ctx, userID)
 }
 
 func (b *BookingService) GetBookingByID(ctx context.Context, id int64) (sqlc.Booking, error) {

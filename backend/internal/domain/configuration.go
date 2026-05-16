@@ -1,5 +1,7 @@
 package domain
 
+import "encoding/json"
+
 type ComputerSpecificationEntry struct {
 	Title string `json:"title" binding:"required"`
 	Value string `json:"value" binding:"required"`
@@ -11,8 +13,9 @@ type CreateComputerConfigurationRequest struct {
 }
 
 type ComputerConfiguration struct {
-	CreateComputerConfigurationRequest
-	ID int64 `json:"id"`
+	ID        int64           `json:"id"`
+	ZoneTagID int64           `json:"zone_tag_id"`
+	SpecsJSON json.RawMessage `json:"specs_json" swaggertype:"object"`
 }
 
 type PatchComputerConfigurationRequest struct {

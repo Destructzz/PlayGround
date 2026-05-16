@@ -7,12 +7,12 @@ import (
 	"backend/pkg"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
+	"net/http"
+	"strconv"
 )
 
 type Booking struct {
@@ -77,6 +77,48 @@ func (b *Booking) Create(c *gin.Context) {
 				response.WithError("capacity_exceeded", "Participants exceed available capacity for this time slot", nil),
 			).JSON(c)
 			return
+		case errors.Is(err, service.ErrInvalidBookingRange):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("invalid_booking_range", "Start time must be earlier than end time", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrServiceZoneMismatch):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("service_zone_mismatch", "Selected service does not belong to the selected zone", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrPlaceZoneMismatch):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("place_zone_mismatch", "Selected place does not belong to the selected zone", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrInactiveService):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusConflict),
+				response.WithError("inactive_service", "Selected service is inactive", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrInactivePlace):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusConflict),
+				response.WithError("inactive_place", "Selected place is inactive", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrInvalidServiceWindow):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("invalid_service_window", "Booking duration must match the selected service", nil),
+			).JSON(c)
+			return
+		case errors.Is(err, service.ErrPastBooking):
+			response.NewResponseBuilder(
+				response.WithStatus(http.StatusBadRequest),
+				response.WithError("past_booking", "Cannot create a booking in the past", nil),
+			).JSON(c)
+			return
 		}
 
 		var pgErr *pgconn.PgError
@@ -115,6 +157,40 @@ func (b *Booking) Create(c *gin.Context) {
 // @Router      /api/v1/booking [get]
 func (b *Booking) Get(c *gin.Context) {
 	bookings, err := b.bookingService.ListBookings(c.Request.Context())
+	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
+		return
+	}
+
+	response.NewResponseBuilder(
+		response.WithData("bookings", bookings),
+	).JSON(c)
+}
+
+// MyBookings возвращает бронирования текущего пользователя.
+// @Summary     List my bookings
+// @Description Returns bookings for the authenticated user
+// @Tags        bookings
+// @Produce     json
+// @Success     200 {object} response.BookingListResponse
+// @Failure     401 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/booking/my [get]
+func (b *Booking) MyBookings(c *gin.Context) {
+	user, ok := pkg.UserFromContext(c)
+	if !ok {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusUnauthorized),
+			response.WithError("unauthorized", "Authentication required to get your bookings", nil),
+		).JSON(c)
+		return
+	}
+
+	bookings, err := b.bookingService.ListBookingsByUserID(c.Request.Context(), user.ID)
 	if err != nil {
 		zap.L().Warn("database error", zap.Error(err))
 		response.NewResponseBuilder(

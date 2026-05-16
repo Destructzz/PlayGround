@@ -1,6 +1,7 @@
 package response
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -28,7 +29,8 @@ type ZoneDoc struct {
 	ZoneType    string    `json:"zone_type" example:"game"`
 	Capacity    int32     `json:"capacity" example:"20"`
 	Description *string   `json:"description,omitempty" example:"Large hall"`
-	IsActive    bool      `json:"is_active" example:"true"`
-	CreatedAt   time.Time `json:"created_at" example:"2026-01-19T15:37:27.514667373Z"`
-	UpdatedAt   time.Time `json:"updated_at" example:"2026-01-19T15:37:27.514667373Z"`
+	IsActive    bool            `json:"is_active" example:"true"`
+	DetailsJSON json.RawMessage `json:"details_json" swaggertype:"object"`
+	CreatedAt   time.Time       `json:"created_at" example:"2026-01-19T15:37:27.514667373Z"`
+	UpdatedAt   time.Time       `json:"updated_at" example:"2026-01-19T15:37:27.514667373Z"`
 }

@@ -10,6 +10,7 @@ type AuthUserResponse struct {
 	AvatarURL string `json:"avatar_url" example:"https://example.com/avatar.jpg"`
 	Name      string `json:"name" example:"Ada Lovelace"`
 	Provider  string `json:"provider" example:"google"`
+	Role      string `json:"role" example:"admin"`
 }
 
 type AuthResponse struct {

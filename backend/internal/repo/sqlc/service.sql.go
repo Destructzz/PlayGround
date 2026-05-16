@@ -89,6 +89,33 @@ func (q *Queries) GetServiceByID(ctx context.Context, id int64) (Service, error)
 	return i, err
 }
 
+const getServiceDurationsByZoneTag = `-- name: GetServiceDurationsByZoneTag :many
+SELECT DISTINCT s.duration
+FROM services s
+JOIN zones z ON z.id = s.zone_id
+WHERE z.zone_tag_id = $1 AND s.is_active = TRUE
+`
+
+func (q *Queries) GetServiceDurationsByZoneTag(ctx context.Context, zoneTagID int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getServiceDurationsByZoneTag, zoneTagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var duration int32
+		if err := rows.Scan(&duration); err != nil {
+			return nil, err
+		}
+		items = append(items, duration)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listServices = `-- name: ListServices :many
 SELECT id, name, zone_id, duration, price, currency, description, is_active, details_json, created_at, updated_at FROM services
 `

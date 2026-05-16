@@ -100,17 +100,10 @@ func (s *SeedService) Get(ctx context.Context) (SeedSnapshot, error) {
 
 		for _, cfg := range configs {
 			if cfg.ZoneTagsID == int64(tag.ID) && specsEqual(cfg.SpecsJson, specsJSON) {
-				var specs []domain.ComputerSpecificationEntry
-				if err := json.Unmarshal(cfg.SpecsJson, &specs); err != nil {
-					return SeedSnapshot{}, err
-				}
-
-				seedConfigurations = append(seedConfigurations, domain.ComputerConfiguration{				
-					CreateComputerConfigurationRequest: domain.CreateComputerConfigurationRequest{
-						ZoneTagID: cfg.ZoneTagsID,
-						SpecsJSON: specs,
-					},
-					ID: cfg.ID,
+				seedConfigurations = append(seedConfigurations, domain.ComputerConfiguration{
+					ID:        cfg.ID,
+					ZoneTagID: cfg.ZoneTagsID,
+					SpecsJSON: json.RawMessage(cfg.SpecsJson),
 				})
 				break
 			}

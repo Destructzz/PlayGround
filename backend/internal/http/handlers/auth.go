@@ -154,6 +154,7 @@ func (a *Auth) Session(c *gin.Context) {
 			AvatarURL: user.AvatarUrl.String,
 			Name:      user.FullName,
 			Provider:  "google",
+			Role:      string(user.Role),
 		}),
 	).JSON(c)
 }

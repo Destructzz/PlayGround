@@ -25,3 +25,9 @@ RETURNING id, name, zone_id, duration, price, currency, description, is_active, 
 
 -- name: DeleteService :one
 DELETE FROM services WHERE id = $1 RETURNING id;
+
+-- name: GetServiceDurationsByZoneTag :many
+SELECT DISTINCT s.duration
+FROM services s
+JOIN zones z ON z.id = s.zone_id
+WHERE z.zone_tag_id = $1 AND s.is_active = TRUE;

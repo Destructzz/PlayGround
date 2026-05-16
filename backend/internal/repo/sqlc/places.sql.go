@@ -226,6 +226,61 @@ func (q *Queries) ListActiveZonePlaces(ctx context.Context, zoneID int64) ([]Zon
 	return items, nil
 }
 
+const listZonePlaceBookingsForDate = `-- name: ListZonePlaceBookingsForDate :many
+SELECT id, zone_id, service_id, place_id, start_time, end_time, status
+FROM bookings
+WHERE zone_id = $1
+  AND place_id IS NOT NULL
+  AND status NOT IN ('canceled')
+  AND start_time < $2
+  AND end_time > $3
+ORDER BY start_time, id
+`
+
+type ListZonePlaceBookingsForDateParams struct {
+	ZoneID    int64              `json:"zone_id"`
+	DateEnd   pgtype.Timestamptz `json:"date_end"`
+	DateStart pgtype.Timestamptz `json:"date_start"`
+}
+
+type ListZonePlaceBookingsForDateRow struct {
+	ID        int64              `json:"id"`
+	ZoneID    int64              `json:"zone_id"`
+	ServiceID int64              `json:"service_id"`
+	PlaceID   pgtype.Int8        `json:"place_id"`
+	StartTime pgtype.Timestamptz `json:"start_time"`
+	EndTime   pgtype.Timestamptz `json:"end_time"`
+	Status    BookingStatus      `json:"status"`
+}
+
+func (q *Queries) ListZonePlaceBookingsForDate(ctx context.Context, arg ListZonePlaceBookingsForDateParams) ([]ListZonePlaceBookingsForDateRow, error) {
+	rows, err := q.db.Query(ctx, listZonePlaceBookingsForDate, arg.ZoneID, arg.DateEnd, arg.DateStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListZonePlaceBookingsForDateRow
+	for rows.Next() {
+		var i ListZonePlaceBookingsForDateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ZoneID,
+			&i.ServiceID,
+			&i.PlaceID,
+			&i.StartTime,
+			&i.EndTime,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listZonePlaces = `-- name: ListZonePlaces :many
 SELECT id, zone_id, label, configuration_id, sort_order, is_active, created_at, updated_at
 FROM zone_places

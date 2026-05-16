@@ -87,6 +87,10 @@ func (s *ShiftService) ListShiftsByZoneTagID(ctx context.Context, zoneTagID int6
 	return s.queries.ListShiftsByZoneTagID(ctx, pgtype.Int8{Int64: zoneTagID, Valid: true})
 }
 
+func (s *ShiftService) GetServiceDurationsByZoneTagID(ctx context.Context, zoneTagID int64) ([]int32, error) {
+	return s.queries.GetServiceDurationsByZoneTag(ctx, int32(zoneTagID))
+}
+
 func (s *ShiftService) PatchShift(ctx context.Context, id int64, dto domain.PatchShiftRequest) (sqlc.GetShiftByIDRow, error) {
 	params := sqlc.PatchShiftParams{ID: id}
 

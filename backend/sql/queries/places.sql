@@ -65,3 +65,13 @@ WHERE zone_id = $1
   AND status NOT IN ('canceled')
   AND start_time < sqlc.arg(end_time)
   AND end_time > sqlc.arg(start_time);
+
+-- name: ListZonePlaceBookingsForDate :many
+SELECT id, zone_id, service_id, place_id, start_time, end_time, status
+FROM bookings
+WHERE zone_id = sqlc.arg(zone_id)
+  AND place_id IS NOT NULL
+  AND status NOT IN ('canceled')
+  AND start_time < sqlc.arg(date_end)
+  AND end_time > sqlc.arg(date_start)
+ORDER BY start_time, id;

@@ -56,7 +56,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	shift := handlers.NewShift(shiftService)
 	placeService := service.NewPlaceService(queries)
 	place := handlers.NewPlace(placeService)
-	public := handlers.NewPublic(queries)
+	publicService := service.NewPublicService(queries)
+	public := handlers.NewPublic(publicService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -82,6 +83,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	publicScope.GET("/lounge", public.Lounge)
 	publicScope.GET("/event", public.Event)
 	publicScope.GET("/gaming", public.Gaming)
+	publicScope.GET("/gaming/availability", public.GamingAvailability)
 
 	// Zone CRUD (admin/internal)
 	zoneScope := api.Group("/zone")
@@ -123,9 +125,10 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	// Booking CRUD (write operations require auth)
 	bookingScope := api.Group("/booking")
-	bookingScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Create)
-	bookingScope.GET("", booking.Get)
-	bookingScope.GET("/:id", booking.GetById)
+	bookingScope.POST("", middleware.AuthRequired(queries), booking.Create)
+	bookingScope.GET("/my", middleware.AuthRequired(queries), booking.MyBookings)
+	bookingScope.GET("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Get)
+	bookingScope.GET("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.GetById)
 	bookingScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Delete)
 	bookingScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Patch)
 
