@@ -132,6 +132,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	bookingScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Delete)
 	bookingScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), booking.Patch)
 
+	api.GET("/bookings/me", middleware.AuthRequired(queries), booking.Me)
+
 	// Staff CRUD
 	staffScope := api.Group("/staff")
 	staffScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Create)

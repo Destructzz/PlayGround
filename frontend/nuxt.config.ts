@@ -9,6 +9,15 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: true,
+  srcDir: 'app',
+  future: {
+    compatibilityVersion: 4
+  },
+  routeRules: {
+    '/**': { ssr: false },
+    '/api/**': { proxy: `${backendUrl}/api/**` }
+  },
   runtimeConfig: {
     public: {
       backendUrl,
@@ -22,15 +31,10 @@ export default defineNuxtConfig({
   ],
 
   devtools: {
-    enabled: true
+    enabled: false
   },
 
   css: ['~/assets/css/main.css'],
-
-  routeRules: {
-    '/': { prerender: true },
-    '/api/**': { proxy: `${backendUrl}/api/**` }
-  },
 
   compatibilityDate: '2025-01-15',
 

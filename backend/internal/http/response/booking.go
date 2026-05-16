@@ -22,6 +22,13 @@ type BookingListResponse struct {
 	RequestID string       `json:"request_id,omitempty" example:"7fbd6854-8e42-4451-80ee-6da60aeceacd"`
 }
 
+type MyBookingsCategorizedResponse struct {
+	Current   []BookingDoc `json:"current"`
+	Archive   []BookingDoc `json:"archive"`
+	Timestamp time.Time    `json:"timestamp" example:"2026-01-19T15:37:27.514667373Z"`
+	RequestID string       `json:"request_id,omitempty" example:"7fbd6854-8e42-4451-80ee-6da60aeceacd"`
+}
+
 type BookingDoc struct {
 	ID           int64     `json:"id" example:"1"`
 	UserID       string    `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`

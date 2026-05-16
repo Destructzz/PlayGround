@@ -532,6 +532,23 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
+  response.MyBookingsCategorizedResponse:
+    properties:
+      archive:
+        items:
+          $ref: '#/definitions/response.BookingDoc'
+        type: array
+      current:
+        items:
+          $ref: '#/definitions/response.BookingDoc'
+        type: array
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
   response.PaymentDoc:
     properties:
       amount:
@@ -1161,6 +1178,48 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Patch booking
+      tags:
+      - bookings
+  /api/v1/booking/my:
+    get:
+      description: Returns bookings for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BookingListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List my bookings
+      tags:
+      - bookings
+  /api/v1/bookings/me:
+    get:
+      description: Returns current and archived bookings for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MyBookingsCategorizedResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List my categorized bookings
       tags:
       - bookings
   /api/v1/configuration:

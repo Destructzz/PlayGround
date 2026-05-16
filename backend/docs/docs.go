@@ -208,6 +208,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/booking/my": {
+            "get": {
+                "description": "Returns bookings for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "List my bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BookingListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/booking/{id}": {
             "get": {
                 "description": "Returns booking by id from path param",
@@ -347,6 +379,38 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/bookings/me": {
+            "get": {
+                "description": "Returns current and archived bookings for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "List my categorized bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MyBookingsCategorizedResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -3332,6 +3396,31 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "pong"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.MyBookingsCategorizedResponse": {
+            "type": "object",
+            "properties": {
+                "archive": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.BookingDoc"
+                    }
+                },
+                "current": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.BookingDoc"
+                    }
                 },
                 "request_id": {
                     "type": "string",

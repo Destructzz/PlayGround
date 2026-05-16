@@ -4,6 +4,7 @@ import (
 	"backend/internal/domain"
 	"backend/internal/http/response"
 	"backend/internal/service"
+	"backend/internal/repo/sqlc"
 	"backend/pkg"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type Booking struct {
@@ -203,6 +205,70 @@ func (b *Booking) MyBookings(c *gin.Context) {
 	response.NewResponseBuilder(
 		response.WithData("bookings", bookings),
 	).JSON(c)
+}
+
+// Me returns categorized bookings for the authenticated user.
+// @Summary     List my categorized bookings
+// @Description Returns current and archived bookings for the authenticated user
+// @Tags        bookings
+// @Produce     json
+// @Success     200 {object} response.MyBookingsCategorizedResponse
+// @Failure     401 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/bookings/me [get]
+func (b *Booking) Me(c *gin.Context) {
+	user, ok := pkg.UserFromContext(c)
+	if !ok {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusUnauthorized),
+			response.WithError("unauthorized", "Authentication required to get your bookings", nil),
+		).JSON(c)
+		return
+	}
+
+	bookings, err := b.bookingService.ListBookingsByUserID(c.Request.Context(), user.ID)
+	if err != nil {
+		zap.L().Warn("database error", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
+		return
+	}
+
+	now := time.Now()
+	var current []response.BookingDoc
+	var archive []response.BookingDoc
+
+	for _, booking := range bookings {
+		doc := toBookingDoc(booking)
+		if now.Before(booking.EndTime.Time) {
+			current = append(current, doc)
+		} else {
+			archive = append(archive, doc)
+		}
+	}
+
+	response.NewResponseBuilder(
+		response.WithData("current", current),
+		response.WithData("archive", archive),
+	).JSON(c)
+}
+
+func toBookingDoc(b sqlc.Booking) response.BookingDoc {
+	return response.BookingDoc{
+		ID:           b.ID,
+		UserID:       pkg.UUIDString(b.UserID),
+		ZoneID:       b.ZoneID,
+		ServiceID:    b.ServiceID,
+		StartTime:    b.StartTime.Time,
+		EndTime:      b.EndTime.Time,
+		Participants: b.Participants,
+		TotalPrice:   pkg.NumericToString(b.TotalPrice),
+		Status:       string(b.Status),
+		CreatedAt:    b.CreatedAt.Time,
+		UpdatedAt:    b.UpdatedAt.Time,
+	}
 }
 
 // GetById возвращает бронирование по id.

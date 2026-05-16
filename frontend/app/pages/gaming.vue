@@ -225,10 +225,10 @@
                 :class="['px-6 py-3 rounded-xl font-bold text-sm border transition-all duration-300',
                          selectedZone === i ? 'dynamic-bg text-black dynamic-glow border-transparent' : 'border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white']"
                 @click="selectedZone = i"
-                >
-                  {{ zone.name }}
-                </button>
-              </div>
+              >
+                {{ zone.name }}
+              </button>
+            </div>
             <p
               v-if="!zones.length"
               class="mb-8 text-sm text-zinc-500"
@@ -250,9 +250,9 @@
                          pc.booked ? 'bg-red-950/40 border-red-900/50 text-red-400 cursor-not-allowed'
                          : selectedPlace === j ? 'dynamic-bg text-black border-transparent scale-110 dynamic-glow' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600']"
                 @click="!pc.booked && (selectedPlace = j)"
-                >
-                  {{ pc.name }}
-                </button>
+              >
+                {{ pc.name }}
+              </button>
             </div>
             <p
               v-else
@@ -264,14 +264,19 @@
             <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">
               Выберите время
             </p>
-            <div v-if="shiftLoading" class="text-sm text-zinc-500 py-4">
-              Загрузка расписания...
+            <div
+              v-if="shiftLoading || availabilityLoading"
+              class="text-sm text-zinc-500 py-4"
+            >
+              {{ shiftLoading ? 'Загрузка расписания...' : 'Загрузка занятости...' }}
             </div>
-            <div v-else-if="!currentShiftInfo" class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
+            <div
+              v-else-if="!currentShiftInfo"
+              class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400"
+            >
               Для выбранной зоны нет активной или предстоящей смены.
             </div>
             <template v-else>
-
               <div class="flex overflow-x-auto pb-6 pt-4 px-4 -mx-4 -mt-2">
                 <div
                   v-for="(hour, k) in hours"
@@ -302,17 +307,118 @@
                 </div>
               </div>
             </template>
+
+            <div class="mt-8 grid gap-4 border-t border-white/8 pt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div class="space-y-3">
+                <div class="rounded-2xl border border-white/8 bg-black/20 px-4 py-4 text-sm text-zinc-300">
+                  <p class="text-xs font-bold uppercase tracking-[0.28em] text-zinc-500">
+                    Итог
+                  </p>
+                  <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                    <p>
+                      Зона: <span class="font-semibold text-white">{{ selectedZoneRecord?.name || 'Не выбрана' }}</span>
+                    </p>
+                    <p>
+                      Место: <span class="font-semibold text-white">{{ selectedPlaceRecord?.name || 'Не выбрано' }}</span>
+                    </p>
+                    <p>
+                      Тариф: <span class="font-semibold text-white">{{ selectedService?.name || 'Недоступен' }}</span>
+                    </p>
+                    <p>
+                      Цена: <span class="font-semibold text-white">{{ selectedService ? formatPrice(selectedService.price, selectedService.currency) : 'Неизвестно' }}</span>
+                    </p>
+                    <p class="sm:col-span-2">
+                      Время: <span class="font-semibold text-white">{{ bookingTimeSummary }}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <p
+                  v-if="availabilityError"
+                  class="rounded-2xl border border-orange-400/25 bg-orange-500/10 px-4 py-3 text-sm text-orange-100"
+                >
+                  {{ availabilityError }}
+                </p>
+                <p
+                  v-if="bookingError"
+                  class="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+                >
+                  {{ bookingError }}
+                </p>
+                <p
+                  v-if="bookingSuccess"
+                  class="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+                >
+                  {{ bookingSuccess }}
+                </p>
+              </div>
+
+              <button
+                class="min-w-[240px] rounded-2xl px-8 py-4 text-base font-black transition-all duration-300"
+                :class="canRequestBooking ? 'dynamic-bg text-black shadow-[0_0_24px_rgba(255,255,255,0.15)] hover:scale-[1.01]' : 'cursor-not-allowed border border-zinc-800 bg-zinc-900 text-zinc-500'"
+                :disabled="!canRequestBooking || bookingLoading"
+                @click="openBookingConfirmation"
+              >
+                {{ bookingLoading ? 'Сохраняю...' : 'Забронировать' }}
+              </button>
+            </div>
           </div>
         </transition>
       </section>
     </div>
+
+    <transition name="fade">
+      <div
+        v-if="isConfirmModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+        @click.self="closeBookingConfirmation"
+      >
+        <div class="w-full max-w-lg rounded-[1.75rem] border border-white/10 bg-[#07141d] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-zinc-500">
+            Подтверждение брони
+          </p>
+          <h3 class="mt-3 text-2xl font-black text-white">
+            Вы действительно хотите забронировать?
+          </h3>
+          <div class="mt-6 space-y-3 rounded-2xl border border-white/8 bg-black/20 p-4 text-sm text-zinc-300">
+            <p>Зона: <span class="font-semibold text-white">{{ selectedZoneRecord?.name }}</span></p>
+            <p>Место: <span class="font-semibold text-white">{{ selectedPlaceRecord?.name }}</span></p>
+            <p>Тариф: <span class="font-semibold text-white">{{ selectedService?.name }}</span></p>
+            <p>Стоимость: <span class="font-semibold text-white">{{ selectedService ? formatPrice(selectedService.price, selectedService.currency) : 'Неизвестно' }}</span></p>
+            <p>Время: <span class="font-semibold text-white">{{ bookingTimeSummary }}</span></p>
+            <p>Аккаунт: <span class="font-semibold text-white">{{ authStore.user?.name || authStore.user?.email }}</span></p>
+          </div>
+
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              class="rounded-2xl border border-white/10 px-5 py-3 text-sm font-bold text-zinc-300 transition hover:border-white/25 hover:text-white"
+              :disabled="bookingLoading"
+              @click="closeBookingConfirmation"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              class="rounded-2xl dynamic-bg px-5 py-3 text-sm font-black text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="bookingLoading"
+              @click="confirmBooking"
+            >
+              {{ bookingLoading ? 'Создаю бронь...' : 'Подтвердить бронь' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { createBooking, getGamingAvailability } from '~/api/booking'
 import { getGamingCatalog, getShiftByZoneTagId } from '~/api/catalog'
-import type { ShiftListResponse } from '~/api/types'
+import type { GamingAvailabilityResponse, ShiftListResponse } from '~/api/types'
+import { useAuthStore } from '~/stores/auth'
 
 type ClassSpec = {
   title: string
@@ -329,7 +435,15 @@ type ClassData = {
 }
 
 type ZoneView = {
+  id: number
   name: string
+  service: {
+    id: number
+    name: string
+    duration: number
+    price: string
+    currency: string
+  } | null
   places: Array<{
     id: number
     name: string
@@ -347,6 +461,8 @@ useHead({
   title: 'Игровая зона - PlayGround'
 })
 
+const authStore = useAuthStore()
+const router = useRouter()
 const { data: catalog, error } = await useAsyncData('gaming-catalog', getGamingCatalog)
 
 const zoneColors = ['#10b981', '#22d3ee', '#f97316', '#a855f7', '#f43f5e']
@@ -360,7 +476,7 @@ function prettifyKey(value: string) {
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/^./, (letter) => letter.toUpperCase())
+    .replace(/^./, letter => letter.toUpperCase())
 }
 
 function stringifyValue(value: unknown): string {
@@ -373,7 +489,7 @@ function stringifyValue(value: unknown): string {
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => stringifyValue(item)).filter(Boolean).join(', ')
+    return value.map(item => stringifyValue(item)).filter(Boolean).join(', ')
   }
 
   if (isRecord(value)) {
@@ -403,13 +519,13 @@ function extractSpecs(input: unknown): ClassSpec[] {
 
       const value = stringifyValue(item)
       return value ? [{ title: `Параметр ${index + 1}`, value }] : []
-    }).filter((spec) => spec.value)
+    }).filter(spec => spec.value)
   }
 
   if (isRecord(input)) {
     return Object.entries(input)
       .map(([key, value]) => ({ title: prettifyKey(key), value: stringifyValue(value) }))
-      .filter((spec) => spec.value)
+      .filter(spec => spec.value)
   }
 
   return []
@@ -418,6 +534,23 @@ function extractSpecs(input: unknown): ClassSpec[] {
 function formatPrice(price: string, currency: string) {
   const suffix = currency === 'RUB' ? '₽' : ` ${currency}`
   return `${price}${suffix}`
+}
+
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function extractErrorMessage(error: unknown) {
+  if (error && typeof error === 'object') {
+    const candidate = error as {
+      data?: { message?: string }
+      message?: string
+    }
+
+    return candidate.data?.message || candidate.message || 'Не удалось создать бронь.'
+  }
+
+  return 'Не удалось создать бронь.'
 }
 
 const rawZones = computed(() => catalog.value?.zones ?? [])
@@ -440,12 +573,12 @@ const userZones = computed(() => [...rawZones.value].sort((left, right) => {
 }))
 
 const classDataList = computed<ClassData[]>(() => zoneTags.value.map((tag, index) => {
-  const tagZones = userZones.value.filter((zone) => zone.zone_tag_id === tag.id)
+  const tagZones = userZones.value.filter(zone => zone.zone_tag_id === tag.id)
   const representativeZone = tagZones[0]
   const details = isRecord(representativeZone?.details_json) ? representativeZone.details_json : {}
-  const config = rawConfigurations.value.find((item) => item.zone_tag_id === tag.id)
+  const config = rawConfigurations.value.find(item => item.zone_tag_id === tag.id)
   const configSpecs = extractSpecs(config?.specs_json)
-  const placeSpecs = extractSpecs(representativeZone?.places.find((place) => place.specs)?.specs)
+  const placeSpecs = extractSpecs(representativeZone?.places.find(place => place.specs)?.specs)
   const detailsSpecs = extractSpecs(details.specs)
   const service = representativeZone?.services[0]
   const specs = (configSpecs.length ? configSpecs : placeSpecs.length ? placeSpecs : detailsSpecs).slice(0, 5)
@@ -456,13 +589,15 @@ const classDataList = computed<ClassData[]>(() => zoneTags.value.map((tag, index
     title: typeof details.title === 'string' ? details.title : representativeZone?.name || tag.name,
     desc: representativeZone?.description || service?.description || 'Игровая зона доступна для бронирования через backend-каталог.',
     hexColor: typeof details.hexColor === 'string' ? details.hexColor : zoneColors[index % zoneColors.length]!,
-    specs: specs.length ? specs : [
-      { title: 'Вместимость', value: String(representativeZone?.capacity ?? 0) },
-      { title: 'Игровых мест', value: String(representativeZone?.places.length ?? 0) },
-      { title: 'Тарифов', value: String(representativeZone?.services.length ?? 0) },
-      { title: 'Конфигураций', value: String(rawConfigurations.value.filter((item) => item.zone_tag_id === tag.id).length) },
-      { title: 'Статус', value: representativeZone?.is_active ? 'Активна' : 'Скрыта' }
-    ]
+    specs: specs.length
+      ? specs
+      : [
+          { title: 'Вместимость', value: String(representativeZone?.capacity ?? 0) },
+          { title: 'Игровых мест', value: String(representativeZone?.places.length ?? 0) },
+          { title: 'Тарифов', value: String(representativeZone?.services.length ?? 0) },
+          { title: 'Конфигураций', value: String(rawConfigurations.value.filter(item => item.zone_tag_id === tag.id).length) },
+          { title: 'Статус', value: representativeZone?.is_active ? 'Активна' : 'Скрыта' }
+        ]
   }
 }))
 
@@ -472,7 +607,7 @@ const activeColor = computed(() => currentClassData.value?.hexColor || '#10b981'
 const tempKey = computed(() => `spec-list-${activeClass.value}-`)
 
 const pricingTiers = computed<PricingTier[]>(() => zoneTags.value.flatMap((tag) => {
-  const zone = userZones.value.find((item) => item.zone_tag_id === tag.id)
+  const zone = userZones.value.find(item => item.zone_tag_id === tag.id)
   const service = zone?.services[0]
 
   if (!zone || !service) {
@@ -491,17 +626,39 @@ const selectedDate = ref(0)
 const selectedZone = ref(0)
 const selectedPlace = ref(-1)
 const selectedHours = ref<number[]>([])
+const bookingError = ref('')
+const bookingSuccess = ref('')
+const bookingLoading = ref(false)
+const availabilityLoading = ref(false)
+const availabilityError = ref('')
+const isConfirmModalOpen = ref(false)
+const currentAvailability = ref<GamingAvailabilityResponse | null>(null)
+const availabilityCache = reactive<Record<string, GamingAvailabilityResponse | null>>({})
 
-const zones = computed<ZoneView[]>(() => userZones.value.map((zone) => ({
+const zones = computed<ZoneView[]>(() => userZones.value.map(zone => ({
+  id: zone.id,
   name: zone.name,
+  service: zone.services[0]
+    ? {
+        id: zone.services[0].id,
+        name: zone.services[0].name,
+        duration: zone.services[0].duration,
+        price: zone.services[0].price,
+        currency: zone.services[0].currency
+      }
+    : null,
   places: [...zone.places]
     .sort((left, right) => left.sort_order - right.sort_order)
-    .map((place) => ({
+    .map(place => ({
       id: place.id,
       name: place.label,
       booked: false
     }))
 })))
+
+const selectedZoneRecord = computed(() => zones.value[selectedZone.value] ?? null)
+const selectedPlaceRecord = computed(() => selectedZoneRecord.value?.places[selectedPlace.value] ?? null)
+const selectedService = computed(() => selectedZoneRecord.value?.service ?? null)
 
 // --- Shift schedule per zone_tag ---
 const shiftLoading = ref(false)
@@ -512,11 +669,6 @@ const currentZoneTagId = computed(() => {
   const zone = userZones.value[selectedZone.value]
   return zone?.zone_tag_id ?? null
 })
-
-function formatShiftTime(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-}
 
 async function fetchShiftForZoneTag(zoneTagId: number) {
   if (zoneTagId in shiftCache) {
@@ -539,6 +691,8 @@ async function fetchShiftForZoneTag(zoneTagId: number) {
 
 watch(currentZoneTagId, (tagId) => {
   currentShiftInfo.value = null
+  currentAvailability.value = null
+  availabilityError.value = ''
   selectedHours.value = []
   selectedDate.value = 0
   if (tagId != null) {
@@ -552,7 +706,7 @@ const dates = computed(() => {
 
   // Build a Set of unique date-keys that have shifts (YYYY-MM-DD local)
   const shiftDays = new Set(
-    shifts.map(shift => {
+    shifts.map((shift) => {
       const d = new Date(shift.start_time)
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     })
@@ -577,60 +731,263 @@ const dates = computed(() => {
       date: d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
       rawDate: d
     }
-  }).filter(Boolean) as { label: string; date: string; rawDate: Date }[]
+  }).filter(Boolean) as { label: string, date: string, rawDate: Date }[]
 })
 
-const hours = computed(() => {
-  if (!currentShiftInfo.value || !currentShiftInfo.value.shifts || currentShiftInfo.value.shifts.length === 0) return []
+const selectedDateRecord = computed(() => dates.value[selectedDate.value] ?? null)
+const selectedDateKey = computed(() => selectedDateRecord.value ? formatDateKey(selectedDateRecord.value.rawDate) : '')
+const requiredSlotCount = computed(() => Math.max(1, Math.ceil((selectedService.value?.duration ?? 60) / 60)))
+const activeShiftsForDate = computed(() => {
+  const selectedRawDate = selectedDateRecord.value?.rawDate
+  if (!selectedRawDate) {
+    return []
+  }
 
-  const selectedRawDate = dates[selectedDate.value]?.rawDate
+  return (currentShiftInfo.value?.shifts ?? []).filter((shift) => {
+    const shiftStart = new Date(shift.start_time)
+    return shiftStart.getFullYear() === selectedRawDate.getFullYear()
+      && shiftStart.getMonth() === selectedRawDate.getMonth()
+      && shiftStart.getDate() === selectedRawDate.getDate()
+  })
+})
+
+const availabilityByPlace = computed(() => {
+  const grouped = new Map<number, Array<{ start: Date, end: Date }>>()
+
+  for (const booking of currentAvailability.value?.bookings ?? []) {
+    const items = grouped.get(booking.place_id) ?? []
+    items.push({
+      start: new Date(booking.start_time),
+      end: new Date(booking.end_time)
+    })
+    grouped.set(booking.place_id, items)
+  }
+
+  return grouped
+})
+
+async function loadAvailability(force = false) {
+  const zone = selectedZoneRecord.value
+  const dateKey = selectedDateKey.value
+
+  if (!zone || !dateKey) {
+    currentAvailability.value = null
+    return
+  }
+
+  const cacheKey = `${zone.id}:${dateKey}`
+  if (!force && cacheKey in availabilityCache) {
+    currentAvailability.value = availabilityCache[cacheKey] ?? null
+    return
+  }
+
+  availabilityLoading.value = true
+  availabilityError.value = ''
+  try {
+    const result = await getGamingAvailability(zone.id, dateKey)
+    availabilityCache[cacheKey] = result
+    currentAvailability.value = result
+  } catch {
+    availabilityCache[cacheKey] = null
+    currentAvailability.value = null
+    availabilityError.value = 'Не удалось загрузить занятость по выбранной дате.'
+  } finally {
+    availabilityLoading.value = false
+  }
+}
+
+function isSlotCoveredByShift(start: Date, end: Date) {
+  return activeShiftsForDate.value.some((shift) => {
+    const shiftStart = new Date(shift.start_time)
+    const shiftEnd = new Date(shift.end_time)
+    return start >= shiftStart && end <= shiftEnd
+  })
+}
+
+function isSlotTaken(placeId: number | null, start: Date, end: Date, index: number, totalCount: number) {
+  if (index + requiredSlotCount.value > totalCount) {
+    return true
+  }
+
+  if (!isSlotCoveredByShift(start, end)) {
+    return true
+  }
+
+  if (!placeId) {
+    return false
+  }
+
+  const intervals = availabilityByPlace.value.get(placeId) ?? []
+  return intervals.some(interval => start < interval.end && end > interval.start)
+}
+
+const hours = computed(() => {
+  if (!activeShiftsForDate.value.length) return []
+
+  const selectedRawDate = selectedDateRecord.value?.rawDate
   if (!selectedRawDate) return []
 
-  const activeShifts = currentShiftInfo.value.shifts.filter(shift => {
-    const shiftStart = new Date(shift.start_time)
-    return shiftStart.getFullYear() === selectedRawDate.getFullYear() &&
-           shiftStart.getMonth() === selectedRawDate.getMonth() &&
-           shiftStart.getDate() === selectedRawDate.getDate()
-  })
-
-  if (activeShifts.length === 0) return []
-  
   // Find min start and max end across all shifts for the selected date
   let minStartHour = 24
   let maxEndHour = 0
-  
-  for (const shift of activeShifts) {
+
+  for (const shift of activeShiftsForDate.value) {
     const start = new Date(shift.start_time)
     const end = new Date(shift.end_time)
-    
+
     minStartHour = Math.min(minStartHour, start.getHours())
     maxEndHour = Math.max(maxEndHour, end.getHours() || 24)
   }
-  
+
   if (minStartHour >= maxEndHour) return []
 
   const count = maxEndHour - minStartHour
 
-  return Array.from({ length: count }, (_, i) => ({
-    time: `${(minStartHour + i).toString().padStart(2, '0')}:00`,
-    label: (minStartHour + i) < 18 ? 'День' : 'Вечер',
-    taken: false
-  }))
+  const allHours = Array.from({ length: count }, (_, i) => {
+    const startsAt = new Date(selectedRawDate)
+    startsAt.setHours(minStartHour + i, 0, 0, 0)
+
+    const bookingEnd = new Date(startsAt)
+    bookingEnd.setMinutes(bookingEnd.getMinutes() + (selectedService.value?.duration ?? 60))
+
+    return {
+      time: `${(minStartHour + i).toString().padStart(2, '0')}:00`,
+      label: (minStartHour + i) < 18 ? 'День' : 'Вечер',
+      taken: isSlotTaken(selectedPlaceRecord.value?.id ?? null, startsAt, bookingEnd, i, count),
+      startsAt,
+      bookingEnd
+    }
+  })
+
+  const now = new Date()
+  return allHours.filter(h => h.startsAt > now)
 })
 
+const selectedBookingStart = computed(() => {
+  const startIndex = selectedHours.value[0]
+  if (startIndex === undefined) {
+    return null
+  }
 
+  return hours.value[startIndex]?.startsAt ?? null
+})
+
+const selectedBookingEnd = computed(() => {
+  const startIndex = selectedHours.value[0]
+  if (startIndex === undefined) {
+    return null
+  }
+
+  return hours.value[startIndex]?.bookingEnd ?? null
+})
+
+const bookingTimeSummary = computed(() => {
+  if (!selectedBookingStart.value || !selectedBookingEnd.value) {
+    return 'Не выбрано'
+  }
+
+  return `${selectedBookingStart.value.toLocaleDateString('ru-RU')} ${selectedBookingStart.value.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${selectedBookingEnd.value.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
+})
+
+const canRequestBooking = computed(() => Boolean(
+  selectedZoneRecord.value
+  && selectedPlaceRecord.value
+  && selectedService.value
+  && selectedBookingStart.value
+  && selectedBookingEnd.value
+))
 
 function toggleHour(index: number) {
   if (hours.value[index]?.taken) return
-  const pos = selectedHours.value.indexOf(index)
-  if (pos >= 0) {
-    selectedHours.value.splice(pos, 1)
-  } else {
-    selectedHours.value.push(index)
+
+  const nextSelection = Array.from({ length: requiredSlotCount.value }, (_, offset) => index + offset)
+  const isSameSelection = nextSelection.length === selectedHours.value.length
+    && nextSelection.every((value, selectionIndex) => selectedHours.value[selectionIndex] === value)
+
+  selectedHours.value = isSameSelection ? [] : nextSelection
+  bookingError.value = ''
+  bookingSuccess.value = ''
+}
+
+async function openBookingConfirmation() {
+  bookingError.value = ''
+  bookingSuccess.value = ''
+
+  if (!authStore.isAuthenticated) {
+    await router.push({
+      path: '/login',
+      query: {
+        return_to: '/gaming'
+      }
+    })
+    return
+  }
+
+  if (!selectedZoneRecord.value || !selectedPlaceRecord.value || !selectedService.value || !selectedBookingStart.value || !selectedBookingEnd.value) {
+    bookingError.value = 'Сначала выбери зону, место и доступное время.'
+    return
+  }
+
+  isConfirmModalOpen.value = true
+}
+
+function closeBookingConfirmation() {
+  if (bookingLoading.value) {
+    return
+  }
+
+  isConfirmModalOpen.value = false
+}
+
+async function confirmBooking() {
+  if (!authStore.isAuthenticated || !authStore.user) {
+    closeBookingConfirmation()
+    await router.push({
+      path: '/login',
+      query: {
+        return_to: '/gaming'
+      }
+    })
+    return
+  }
+
+  if (!selectedZoneRecord.value || !selectedPlaceRecord.value || !selectedService.value || !selectedBookingStart.value || !selectedBookingEnd.value) {
+    bookingError.value = 'Для подтверждения нужно выбрать полную конфигурацию брони.'
+    return
+  }
+
+  bookingLoading.value = true
+  bookingError.value = ''
+
+  try {
+    await createBooking({
+      zone_id: selectedZoneRecord.value.id,
+      service_id: selectedService.value.id,
+      place_id: selectedPlaceRecord.value.id,
+      start_time: selectedBookingStart.value.toISOString(),
+      end_time: selectedBookingEnd.value.toISOString(),
+      participants: 1,
+      status: 'confirmed',
+      contact_name: authStore.user.name,
+      contact_email: authStore.user.email,
+      contact_phone: '',
+      details_json: JSON.stringify({
+        source: 'gaming'
+      })
+    })
+
+    isConfirmModalOpen.value = false
+    bookingSuccess.value = `Бронь для ${selectedPlaceRecord.value.name} подтверждена.`
+    selectedHours.value = []
+    await loadAvailability(true)
+  } catch (error) {
+    bookingError.value = extractErrorMessage(error)
+  } finally {
+    bookingLoading.value = false
   }
 }
 
-function getHourClass(k: number, hour: { time: string; label: string; taken: boolean }) {
+function getHourClass(k: number, hour: { time: string, label: string, taken: boolean }) {
   const isSelected = selectedHours.value.includes(k)
   const isPrevSelected = isSelected && selectedHours.value.includes(k - 1)
   const isNextSelected = isSelected && selectedHours.value.includes(k + 1)
@@ -662,6 +1019,27 @@ function getHourClass(k: number, hour: { time: string; label: string; taken: boo
 
   return classes.join(' ')
 }
+
+watch([selectedZone, selectedDateKey], () => {
+  currentAvailability.value = null
+  selectedHours.value = []
+  bookingError.value = ''
+  bookingSuccess.value = ''
+
+  if (selectedZoneRecord.value && selectedDateKey.value) {
+    loadAvailability()
+  }
+}, { immediate: true })
+
+watch(selectedZone, () => {
+  selectedPlace.value = -1
+})
+
+watch(selectedPlace, () => {
+  selectedHours.value = []
+  bookingError.value = ''
+  bookingSuccess.value = ''
+})
 
 watchEffect(() => {
   if (classDataList.value.length === 0) {

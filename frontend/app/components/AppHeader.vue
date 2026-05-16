@@ -30,6 +30,11 @@
           to="/event"
           class="hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.6)] transition-all"
         >Event</NuxtLink>
+        <NuxtLink
+          v-if="authStore.user?.role === 'admin'"
+          to="/admin"
+          class="hover:text-white hover:drop-shadow-[0_0_8px_rgba(103,232,249,0.8)] transition-all"
+        >Admin</NuxtLink>
       </nav>
 
       <!-- Кнопки действий -->
@@ -39,25 +44,32 @@
         </template>
         <template v-else-if="authStore.isAuthenticated">
           <div class="flex items-center gap-3 border border-cyan-400/20 bg-cyan-950/40 px-3 py-2.5">
-            <img
-              v-if="authStore.user?.avatar_url"
-              :src="authStore.user.avatar_url"
-              :alt="authStore.user.name"
-              class="h-9 w-9 rounded-full border border-cyan-300/30 object-cover"
+            <NuxtLink
+              to="/profile"
+              class="flex items-center gap-3 group transition-opacity hover:opacity-80"
             >
-            <div
-              v-else
-              class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-sm font-bold text-cyan-100"
-            >
-              {{ accountInitial }}
-            </div>
+              <img
+                v-if="authStore.user?.avatar_url"
+                :src="authStore.user.avatar_url"
+                :alt="authStore.user.name"
+                class="h-9 w-9 rounded-full border border-cyan-300/30 object-cover"
+              >
+              <div
+                v-else
+                class="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-sm font-bold text-cyan-100"
+              >
+                {{ accountInitial }}
+              </div>
 
-            <div class="hidden min-w-0 sm:block">
-              <p class="max-w-48 truncate text-sm font-medium text-cyan-100">{{ displayName }}</p>
-            </div>
+              <div class="hidden min-w-0 sm:block">
+                <p class="max-w-48 truncate text-sm font-medium text-cyan-100 group-hover:text-white transition-colors">
+                  {{ displayName }}
+                </p>
+              </div>
+            </NuxtLink>
             <button
-              @click="authStore.logout"
               class="text-sm font-semibold text-red-400 hover:text-red-300 transition-all"
+              @click="authStore.logout"
             >
               Выйти
             </button>
