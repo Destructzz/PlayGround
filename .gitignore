@@ -41,3 +41,7 @@ node_modules/
 # Misc
 *.swp
 *.swo
+
+# Backups
+backup/*
+!backup/.gitkeep
