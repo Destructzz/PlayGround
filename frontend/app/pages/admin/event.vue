@@ -1,33 +1,31 @@
 <template>
-  <div class="min-h-screen bg-[#020c13] pb-12 pt-20 text-white">
-    <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-
-      <!-- Header -->
-      <div class="mb-8 flex items-center justify-between">
-        <div>
-          <NuxtLink to="/admin" class="text-[11px] font-bold uppercase tracking-[0.3em] text-fuchsia-100/40 hover:text-fuchsia-100/70 transition">
-            &larr; Admin Panel
-          </NuxtLink>
-          <h1 class="mt-2 text-3xl font-black tracking-tight text-white">Events</h1>
-          <p class="mt-1 text-sm text-zinc-400">Управление событиями, форматами и спикерами.</p>
-        </div>
+  <div class="space-y-6">
+    <!-- Header Card -->
+    <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-[1.25rem] border border-white/5 bg-[#050f17] p-8 shadow-2xl">
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-fuchsia-300/50">Event Management</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-white">Events</h1>
+        <p class="mt-3 text-sm text-zinc-400 max-w-2xl leading-relaxed">Управление событиями, форматами и спикерами.</p>
+      </div>
+      <div class="flex items-center gap-4 flex-shrink-0">
         <button
           type="button"
-          class="rounded-[0.9rem] bg-fuchsia-300 px-6 py-3 text-sm font-black uppercase tracking-widest text-[#020c13] transition hover:bg-fuchsia-200 hover:shadow-[0_0_20px_rgba(244,114,182,0.4)]"
+          class="rounded-[0.9rem] bg-fuchsia-300 px-6 py-3 text-xs font-black uppercase tracking-widest text-[#020c13] transition hover:bg-fuchsia-200 hover:shadow-[0_0_20px_rgba(244,114,182,0.4)] active:scale-95"
           @click="showCreate = !showCreate"
         >
           {{ showCreate ? 'Скрыть форму' : '+ Добавить событие' }}
         </button>
       </div>
+    </header>
 
-      <!-- Feedback -->
-      <div
-        v-if="feedbackMessage"
-        class="mb-6 rounded-[0.8rem] border px-4 py-3 text-sm"
-        :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
-      >
-        {{ feedbackMessage }}
-      </div>
+    <!-- Feedback -->
+    <div
+      v-if="feedbackMessage"
+      class="rounded-[0.8rem] border px-4 py-3 text-sm shadow-lg"
+      :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
+    >
+      {{ feedbackMessage }}
+    </div>
 
       <!-- Create form -->
       <div v-if="showCreate" class="mb-8 rounded-[1rem] border border-fuchsia-400/20 bg-[#050f17] p-6 shadow-2xl">
@@ -101,14 +99,7 @@
             </label>
           </div>
 
-          <div>
-            <label class="mb-2 block text-xs font-bold uppercase tracking-[0.25em] text-fuchsia-100/45">Zone Tag</label>
-            <select v-model="createForm.zoneTagId"
-              class="w-full rounded-[0.8rem] border border-fuchsia-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-fuchsia-300 focus:outline-none">
-              <option value="">Выбрать tag</option>
-              <option v-for="tag in zoneTags" :key="tag.id" :value="String(tag.id)">{{ tag.name }}</option>
-            </select>
-          </div>
+
 
           <button type="submit" :disabled="isMutating"
             class="w-full rounded-[0.9rem] bg-fuchsia-300 py-3.5 text-sm font-black uppercase tracking-widest text-[#020c13] transition hover:bg-fuchsia-200 disabled:cursor-not-allowed disabled:bg-fuchsia-300/50">
@@ -254,7 +245,6 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -360,13 +350,17 @@ function showFeedback(tone: 'success' | 'error', msg: string) {
 }
 
 async function submitCreate() {
-  if (!createForm.value.zoneTagId) { showFeedback('error', 'Выбери zone tag'); return }
+  const eventTag = zoneTags.value.find(t => t.name.toLowerCase().includes('event')) || zoneTags.value[0]
+  if (!eventTag) {
+    showFeedback('error', 'Ошибка: Не найден подходящий тег для события. Создайте тег «event» в разделе Теги.')
+    return
+  }
   isMutating.value = true
   try {
     const resp = await createAdminZone({
       name: createForm.value.name,
       type: 'event',
-      zone_tag_id: Number(createForm.value.zoneTagId),
+      zone_tag_id: eventTag.id,
       capacity: Number(createForm.value.capacity),
       description: createForm.value.description,
       is_active: createForm.value.isActive,

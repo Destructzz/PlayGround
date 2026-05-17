@@ -1,33 +1,31 @@
 <template>
-  <div class="min-h-screen bg-[#020c13] pb-12 pt-20 text-white">
-    <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-
-      <!-- Header -->
-      <div class="mb-8 flex items-center justify-between">
-        <div>
-          <NuxtLink to="/admin" class="text-[11px] font-bold uppercase tracking-[0.3em] text-cyan-100/40 hover:text-cyan-100/70 transition">
-            ← Admin Panel
-          </NuxtLink>
-          <h1 class="mt-2 text-3xl font-black tracking-tight text-white">Lounge Zones</h1>
-          <p class="mt-1 text-sm text-zinc-400">Управление лаунж-зонами, перками и настройками атмосферы.</p>
-        </div>
+  <div class="space-y-6">
+    <!-- Header Card -->
+    <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-[1.25rem] border border-white/5 bg-[#050f17] p-8 shadow-2xl">
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-300/50">Lounge Management</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-white">Lounge Zones</h1>
+        <p class="mt-3 text-sm text-zinc-400 max-w-2xl leading-relaxed">Управление лаунж-зонами, перками и настройками атмосферы.</p>
+      </div>
+      <div class="flex items-center gap-4 flex-shrink-0">
         <button
           type="button"
-          class="rounded-[0.9rem] bg-cyan-300 px-6 py-3 text-sm font-black uppercase tracking-widest text-[#020c13] transition hover:bg-cyan-200 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+          class="rounded-[0.9rem] bg-cyan-300 px-6 py-3 text-xs font-black uppercase tracking-widest text-[#020c13] transition hover:bg-cyan-200 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95"
           @click="showCreate = !showCreate"
         >
           {{ showCreate ? 'Скрыть форму' : '+ Добавить зону' }}
         </button>
       </div>
+    </header>
 
-      <!-- Feedback -->
-      <div
-        v-if="feedbackMessage"
-        class="mb-6 rounded-[0.8rem] border px-4 py-3 text-sm"
-        :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
-      >
-        {{ feedbackMessage }}
-      </div>
+    <!-- Feedback -->
+    <div
+      v-if="feedbackMessage"
+      class="rounded-[0.8rem] border px-4 py-3 text-sm shadow-lg"
+      :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
+    >
+      {{ feedbackMessage }}
+    </div>
 
       <!-- Create form -->
       <div v-if="showCreate" class="mb-8 rounded-[1rem] border border-cyan-400/20 bg-[#050f17] p-6 shadow-2xl">
@@ -293,7 +291,6 @@
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 

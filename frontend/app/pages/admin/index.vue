@@ -1,907 +1,817 @@
 <template>
-  <div class="admin-page min-h-screen bg-[#020c13] pb-8 pt-20 text-white">
-    <div class="mx-auto max-w-[1680px] px-3 sm:px-4 lg:px-5">
-      <div class="grid gap-8 lg:grid-cols-[380px_1fr]">
-
-        <aside class="space-y-6">
-          <!-- Admin Profile Card -->
-          <div class="overflow-hidden rounded-[1.25rem] border border-cyan-400/20 bg-[#050f17] shadow-[0_24px_64px_rgba(0,0,0,0.45)]">
-            <div class="border-b border-white/8 bg-[linear-gradient(180deg,#08131b,#050f17)] px-6 py-10 flex flex-col items-center text-center">
-              <div class="relative">
-                <div class="flex h-28 w-28 items-center justify-center rounded-full border-4 border-cyan-300/30 bg-cyan-400/10 text-4xl font-black text-cyan-100 shadow-[0_0_40px_rgba(34,211,238,0.25)]">
-                  {{ authStore.user?.name?.charAt(0).toUpperCase() || 'A' }}
-                </div>
-                <div class="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border-4 border-[#050f17] bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]" title="System Active"></div>
-              </div>
-              
-              <h2 class="mt-5 text-2xl font-black tracking-tight text-white">{{ adminDisplayName }}</h2>
-              <p class="text-sm font-medium text-cyan-100/60">{{ adminEmail }}</p>
-              
-              <div class="mt-4 inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-100">
-                Control Center
-              </div>
-            </div>
-
-            <div class="bg-[#050f17] p-4">
-              <nav class="space-y-2">
-                <button
-                  v-for="tab in tabs"
-                  :key="tab.id"
-                  @click="activeTab = tab.id"
-                  class="group flex w-full items-center justify-between rounded-[0.9rem] px-4 py-4 transition-all duration-300"
-                  :class="activeTab === tab.id 
-                    ? 'bg-cyan-400/10 text-white border border-cyan-400/25 shadow-[0_0_20px_rgba(34,211,238,0.1)]' 
-                    : 'text-zinc-500 hover:bg-white/[0.03] hover:text-white border border-transparent'"
-                >
-                  <div class="flex items-center gap-4">
-                    <span class="text-xl opacity-70 group-hover:opacity-100 transition-opacity">
-                      {{ tab.id === 'zones' ? '🗺️' : tab.id === 'zone-tags' ? '🏷️' : tab.id === 'bookings' ? '📅' : '⏳' }}
-                    </span>
-                    <span class="text-[13px] font-black uppercase tracking-wider">{{ tab.label }}</span>
-                  </div>
-                  <span 
-                    class="rounded-md border px-2.5 py-1 text-[10px] font-black tracking-tighter"
-                    :class="activeTab === tab.id ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-200' : 'border-white/10 bg-white/5 text-zinc-600'"
-                  >
-                    {{ tabMetric(tab.id) }}
-                  </span>
-                </button>
-              </nav>
-            </div>
-          </div>
-
-          <!-- Quick Stats Grid -->
-          <div class="grid grid-cols-2 gap-4">
-            <div
-              v-for="stat in dashboardStats"
-              :key="`${stat.label}-sidebar`"
-              class="rounded-[1.25rem] border border-white/5 bg-[#050f17] p-5 text-center shadow-xl transition-transform hover:scale-[1.02]"
-            >
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                {{ stat.label }}
-              </p>
-              <p class="mt-2 text-2xl font-black text-white leading-none">
-                {{ stat.value }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Specialized Admin Pages -->
-          <div class="rounded-[1.25rem] border border-white/8 bg-[#050f17] p-5 shadow-xl">
-            <p class="mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">Специализированные разделы</p>
-            <div class="space-y-2">
-              <NuxtLink
-                to="/admin/lounge"
-                class="flex items-center gap-3 rounded-[0.85rem] border border-cyan-400/15 bg-cyan-400/5 px-4 py-3 text-sm font-bold text-cyan-100 transition hover:border-cyan-300/35 hover:bg-cyan-400/10"
-              >
-                <span class="text-lg">🛋️</span>
-                <div>
-                  <p class="font-black">Lounge Zones</p>
-                  <p class="text-[10px] font-normal text-cyan-100/50">Перки, mood, вместимость</p>
-                </div>
-              </NuxtLink>
-              <NuxtLink
-                to="/admin/event"
-                class="flex items-center gap-3 rounded-[0.85rem] border border-fuchsia-400/15 bg-fuchsia-400/5 px-4 py-3 text-sm font-bold text-fuchsia-100 transition hover:border-fuchsia-300/35 hover:bg-fuchsia-400/10"
-              >
-                <span class="text-lg">🎪</span>
-                <div>
-                  <p class="font-black">Events</p>
-                  <p class="text-[10px] font-normal text-fuchsia-100/50">Формат, спикеры, даты</p>
-                </div>
-              </NuxtLink>
-            </div>
-          </div>
-
-          <!-- Action Card -->
-          <div class="rounded-[1.25rem] border border-white/8 bg-[linear-gradient(135deg,#050f17,#0a1d29)] p-6 shadow-2xl">
-            <h3 class="text-[13px] font-black uppercase tracking-widest text-white/90">Quick Management</h3>
-            <p class="mt-3 text-[12px] leading-relaxed text-zinc-500">Configure playground resources and manage active sessions.</p>
-            <button
-              v-if="showCreateAction"
-              type="button"
-              class="mt-6 w-full rounded-[0.9rem] bg-cyan-300 py-3.5 text-[11px] font-black uppercase tracking-widest text-[#020c13] transition hover:bg-cyan-200 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95"
-              @click="openCreateModal"
-            >
-              {{ createModalMeta.buttonLabel }}
-            </button>
-            <button
-              @click="authStore.logout"
-              class="mt-3 w-full rounded-[0.9rem] border border-red-500/20 bg-red-500/10 py-3.5 text-[11px] font-black uppercase tracking-widest text-red-400 transition hover:bg-red-500/20 active:scale-95"
-            >
-              Logout Session
-            </button>
-          </div>
-        </aside>
-
-        <!-- Right Content Area -->
-        <main class="space-y-6">
-          <header class="flex items-center justify-between rounded-[1.25rem] border border-white/5 bg-[#050f17] p-8 shadow-2xl">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-300/50">{{ activeTabItem.eyebrow }}</p>
-              <h1 class="mt-2 text-3xl font-black tracking-tight text-white">{{ activeTabItem.title }}</h1>
-              <p class="mt-3 text-sm text-zinc-400 max-w-2xl leading-relaxed">{{ activeTabItem.description }}</p>
-            </div>
-            <div class="hidden sm:block">
-               <div class="h-16 w-16 flex items-center justify-center rounded-2xl bg-cyan-400/10 border border-cyan-400/20 text-3xl">
-                 {{ activeTab === 'zones' ? '🗺️' : activeTab === 'zone-tags' ? '🏷️' : activeTab === 'bookings' ? '📅' : '⏳' }}
-               </div>
-            </div>
-          </header>
-
-
-          <div
-            v-if="feedbackMessage"
-            class="rounded-[0.8rem] border px-4 py-3 text-sm shadow-lg"
-            :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
-          >
-            {{ feedbackMessage }}
-          </div>
-
-          <section
-            v-if="isLoading"
-            class="rounded-[1rem] border border-white/5 bg-[#050f17] p-12 text-center text-sm font-medium text-zinc-400"
-          >
-            Загрузка системных данных...
-          </section>
-
-          <section
-            v-else-if="pageError"
-            class="rounded-[1rem] border border-orange-300/20 bg-orange-500/10 p-8"
-          >
-            <p class="text-sm font-bold text-orange-200">Ошибка загрузки: {{ pageError }}</p>
-            <button
-              class="mt-4 rounded-full border border-white/20 px-6 py-2 text-xs font-bold text-white transition hover:bg-white/10"
-              @click="loadAdminData()"
-            >
-              Повторить попытку
-            </button>
-          </section>
-
-          <template v-else>
-
-
-            <section
-              v-if="activeTab === 'zones'"
-              class="space-y-4"
-            >
-              <article class="space-y-4">
-                <div
-                  v-if="!sortedZones.length"
-                  class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
-                >
-                  Пока нет зон. Начни с создания первой записи через кнопку выше.
-                </div>
-
-                <div
-                  v-for="zone in sortedZones"
-                  :key="zone.id"
-                  class="overflow-hidden border border-white/8 bg-[#07141d] shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
-                >
-                  <div class="border-b border-white/8 px-4 py-4">
-                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span
-                            class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em]"
-                            :class="zoneBadgeClass(zone.zoneType)"
-                          >
-                            {{ zoneTypeLabel(zone.zoneType) }}
-                          </span>
-                          <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/55">
-                            {{ zoneTagName(zone.zoneTagId) }}
-                          </span>
-                          <span
-                            v-if="zone.isActive"
-                            class="rounded-full border border-emerald-300/20 bg-emerald-500/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-100/80"
-                          >
-                            active
-                          </span>
-                          <span
-                            v-else
-                            class="rounded-full border border-zinc-300/15 bg-zinc-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/70"
-                          >
-                            inactive
-                          </span>
-                        </div>
-                        <h3 class="mt-4 text-2xl font-black text-white">
-                          {{ zone.name }}
-                        </h3>
-                        <p class="mt-2 text-sm leading-7 text-zinc-300">
-                          {{ zone.description || 'Описание не заполнено.' }}
-                        </p>
-                      </div>
-
-                      <div class="flex flex-wrap items-center gap-3">
-                        <div class="border border-white/8 bg-white/4 px-3 py-2 text-right">
-                          <p class="text-[11px] uppercase tracking-[0.28em] text-cyan-100/45">
-                            Capacity
-                          </p>
-                          <p class="mt-2 text-2xl font-black text-white">
-                            {{ zone.capacity }}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          class="rounded-[0.8rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
-                          @click="toggleZoneEditor(zone.id)"
-                        >
-                          {{ expandedZoneId === zone.id ? 'Скрыть форму' : 'Редактировать' }}
-                        </button>
-                        <button
-                          type="button"
-                          class="rounded-[0.8rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
-                          :disabled="isMutating"
-                          @click="removeZone(zone.id, zone.name)"
-                        >
-                          Удалить
-                        </button>
-                      </div>
-                    </div>
-
-                    <div
-                      v-if="hasZoneDetails(zone.detailsJson)"
-                      class="mt-4 border border-white/8 bg-[#06131c] p-3"
-                    >
-                      <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
-                        Details JSON
-                      </p>
-                      <pre class="mt-3 overflow-x-auto text-xs leading-6 text-zinc-300">{{ zone.detailsJson }}</pre>
-                    </div>
-                  </div>
-
-                  <div
-                    v-if="expandedZoneId === zone.id"
-                    class="border-b border-white/8 px-4 py-4"
-                  >
-                    <form
-                      class="space-y-4"
-                      @submit.prevent="updateZone(zone.id)"
-                    >
-                      <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Название</label>
-                          <input
-                            v-model="ensureZoneDraft(zone.id).name"
-                            type="text"
-                            class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                          >
-                        </div>
-                        <div>
-                          <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Тип зоны</label>
-                          <select
-                            v-model="ensureZoneDraft(zone.id).type"
-                            class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                          >
-                            <option
-                              v-for="option in zoneTypeOptions"
-                              :key="option.value"
-                              :value="option.value"
-                            >
-                              {{ option.label }}
-                            </option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="grid gap-4 lg:grid-cols-[1fr_auto]">
-                        <div>
-                          <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Zone tag</label>
-                          <select
-                            v-model="ensureZoneDraft(zone.id).zoneTagId"
-                            class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                          >
-                            <option
-                              disabled
-                              value=""
-                            >
-                              Выбери tag
-                            </option>
-                            <option
-                              v-for="tag in sortedZoneTags"
-                              :key="tag.id"
-                              :value="String(tag.id)"
-                            >
-                              {{ tag.name }}
-                            </option>
-                          </select>
-                        </div>
-
-                        <div class="border border-white/8 bg-white/4 p-3 lg:min-w-64">
-                          <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
-                            Создать tag здесь
-                          </p>
-                          <label class="mb-2 mt-3 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Название тега</label>
-                          <div class="flex gap-2">
-                            <input
-                              v-model="ensureZoneEditTagNames(zone.id)[zone.id]"
-                              type="text"
-                              placeholder="Новый tag"
-                              class="min-w-0 flex-1 rounded-[0.75rem] border border-cyan-400/18 bg-[#06131c] px-3 py-2.5 text-sm text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
-                            >
-                            <button
-                              type="button"
-                              class="rounded-[0.75rem] bg-cyan-300 px-4 py-2.5 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
-                              :disabled="isMutating"
-                              @click="createZoneTagFromZoneContext(ensureZoneEditTagNames(zone.id)[zone.id] ?? '', zone.id)"
-                            >
-                              Добавить
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Вместимость</label>
-                          <input
-                            v-model="ensureZoneDraft(zone.id).capacity"
-                            type="number"
-                            min="1"
-                            class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                          >
-                        </div>
-                        <label class="flex items-center gap-3 rounded-[0.9rem] border border-white/8 bg-white/4 px-4 py-3 text-sm text-zinc-200">
-                          <input
-                            v-model="ensureZoneDraft(zone.id).isActive"
-                            type="checkbox"
-                            class="h-4 w-4 accent-cyan-300"
-                          >
-                          Зона активна
-                        </label>
-                      </div>
-
-                      <div>
-                        <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Описание</label>
-                        <textarea
-                          v-model="ensureZoneDraft(zone.id).description"
-                          rows="4"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Details JSON</label>
-                        <textarea
-                          v-model="ensureZoneDraft(zone.id).detailsJson"
-                          rows="6"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 font-mono text-sm text-white focus:border-cyan-300 focus:outline-none"
-                        />
-                      </div>
-
-                      <div class="flex flex-wrap gap-3">
-                        <button
-                          type="submit"
-                          class="rounded-[0.85rem] bg-cyan-300 px-5 py-3 text-sm font-black uppercase tracking-[0.28em] text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
-                          :disabled="isMutating"
-                        >
-                          Сохранить изменения
-                        </button>
-                        <button
-                          type="button"
-                          class="rounded-[0.85rem] border border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:border-white/25"
-                          :disabled="isMutating"
-                          @click="resetZoneDraft(zone.id)"
-                        >
-                          Сбросить
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-
-                  <div class="px-4 py-4">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                      <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
-                          Places inside this zone
-                        </p>
-                        <p class="mt-2 text-sm leading-7 text-zinc-300">
-                          Все места уже привязаны к текущей зоне. Здесь не нужно думать про `zone_id` и архитектуру отдельно.
-                        </p>
-                      </div>
-                      <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/55">
-                        {{ placesForZone(zone.id).length }} мест
-                      </span>
-                    </div>
-
-                    <form
-                      class="mt-4 grid gap-3 border border-white/8 bg-[#06131c] p-3 lg:grid-cols-[1.15fr_0.75fr_0.75fr_auto]"
-                      @submit.prevent="submitPlace(zone.id)"
-                    >
-                      <div>
-                        <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Label</label>
-                        <input
-                          v-model="ensureNewPlaceForm(zone.id).label"
-                          type="text"
-                          placeholder="Например, PC-07"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
-                        >
-                      </div>
-                      <div>
-                        <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Sort order</label>
-                        <input
-                          v-model="ensureNewPlaceForm(zone.id).sortOrder"
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                        >
-                      </div>
-                      <div>
-                        <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Configuration ID</label>
-                        <input
-                          v-model="ensureNewPlaceForm(zone.id).configurationId"
-                          type="number"
-                          min="1"
-                          placeholder="Если нужен"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
-                        >
-                      </div>
-                      <div class="lg:self-end">
-                        <button
-                          type="submit"
-                          class="w-full rounded-[0.8rem] bg-white px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-white/50"
-                          :disabled="isMutating"
-                        >
-                          Добавить место
-                        </button>
-                      </div>
-                      <label class="lg:col-span-4 flex items-center gap-3 text-sm text-zinc-300">
-                        <input
-                          v-model="ensureNewPlaceForm(zone.id).isActive"
-                          type="checkbox"
-                          class="h-4 w-4 accent-cyan-300"
-                        >
-                        Место активно. `Configuration ID` можно оставить пустым, если для зоны он не нужен.
-                      </label>
-                    </form>
-
-                    <div
-                      v-if="!placesForZone(zone.id).length"
-                      class="mt-4 border border-white/8 bg-white/4 px-4 py-3 text-sm text-zinc-300"
-                    >
-                      У этой зоны пока нет мест.
-                    </div>
-
-                    <div
-                      v-else
-                      class="mt-4 grid gap-3"
-                    >
-                      <div
-                        v-for="place in placesForZone(zone.id)"
-                        :key="place.id"
-                        class="border border-white/8 bg-white/4 p-3"
-                      >
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                          <div>
-                            <div class="flex flex-wrap items-center gap-2">
-                              <span class="rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/70">
-                                {{ place.label }}
-                              </span>
-                              <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
-                                sort {{ place.sortOrder }}
-                              </span>
-                              <span
-                                v-if="place.isActive"
-                                class="rounded-full border border-emerald-300/20 bg-emerald-500/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-100/80"
-                              >
-                                active
-                              </span>
-                              <span
-                                v-else
-                                class="rounded-full border border-zinc-300/15 bg-zinc-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/70"
-                              >
-                                inactive
-                              </span>
-                            </div>
-                            <p class="mt-3 text-sm text-zinc-300">
-                              Configuration ID: <span class="font-bold text-white">{{ place.configurationId ?? 'не задан' }}</span>
-                            </p>
-                          </div>
-
-                          <div class="flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              class="rounded-[0.75rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
-                              @click="togglePlaceEditor(place.id)"
-                            >
-                              {{ expandedPlaceId === place.id ? 'Скрыть форму' : 'Редактировать' }}
-                            </button>
-                            <button
-                              type="button"
-                              class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
-                              :disabled="isMutating"
-                              @click="removePlace(place.id, place.label)"
-                            >
-                              Удалить
-                            </button>
-                          </div>
-                        </div>
-
-                        <form
-                          v-if="expandedPlaceId === place.id"
-                          class="mt-3 grid gap-3 lg:grid-cols-[1fr_0.7fr_0.7fr_auto]"
-                          @submit.prevent="updatePlace(place.id)"
-                        >
-                          <div>
-                            <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Label</label>
-                            <input
-                              v-model="ensurePlaceDraft(place.id).label"
-                              type="text"
-                              class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                            >
-                          </div>
-                          <div>
-                            <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Sort order</label>
-                            <input
-                              v-model="ensurePlaceDraft(place.id).sortOrder"
-                              type="number"
-                              min="0"
-                              class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                            >
-                          </div>
-                          <div>
-                            <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Configuration ID</label>
-                            <input
-                              v-model="ensurePlaceDraft(place.id).configurationId"
-                              type="number"
-                              min="1"
-                              placeholder="Если нужен"
-                              class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
-                            >
-                          </div>
-                          <div class="lg:self-end">
-                            <button
-                              type="submit"
-                              class="w-full rounded-[0.8rem] bg-cyan-300 px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
-                              :disabled="isMutating"
-                            >
-                              Сохранить
-                            </button>
-                          </div>
-                          <label class="lg:col-span-4 flex items-center gap-3 text-sm text-zinc-300">
-                            <input
-                              v-model="ensurePlaceDraft(place.id).isActive"
-                              type="checkbox"
-                              class="h-4 w-4 accent-cyan-300"
-                            >
-                            Место активно
-                          </label>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </section>
-
-            <section
-              v-else-if="activeTab === 'zone-tags'"
-              class="space-y-4"
-            >
-              <article class="space-y-4">
-                <div
-                  v-if="!sortedZoneTags.length"
-                  class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
-                >
-                  Теги ещё не созданы.
-                </div>
-
-                <div
-                  v-for="tag in sortedZoneTags"
-                  :key="tag.id"
-                  class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
-                >
-                  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
-                        Tag #{{ tag.id }}
-                      </p>
-                      <h3 class="mt-2 text-2xl font-black text-white">
-                        {{ tag.name }}
-                      </h3>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-orange-200/40"
-                        @click="toggleZoneTagEditor(tag.id)"
-                      >
-                        {{ expandedZoneTagId === tag.id ? 'Скрыть форму' : 'Редактировать' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
-                        :disabled="isMutating"
-                        @click="removeZoneTag(tag.id, tag.name)"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
-
-                  <form
-                    v-if="expandedZoneTagId === tag.id"
-                    class="mt-3 flex flex-col gap-3 sm:flex-row"
-                    @submit.prevent="updateZoneTag(tag.id)"
-                  >
-                    <div class="min-w-0 flex-1">
-                      <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Название тега</label>
-                      <input
-                        v-model="zoneTagDrafts[tag.id]"
-                        type="text"
-                        class="min-w-0 w-full rounded-[0.8rem] border border-orange-300/18 bg-[#06131c] px-4 py-3 text-white focus:border-orange-300 focus:outline-none"
-                      >
-                    </div>
-                    <button
-                      type="submit"
-                      class="rounded-[0.8rem] bg-orange-300 px-5 py-3 text-sm font-black text-[#020c13] transition hover:bg-orange-200 disabled:cursor-not-allowed disabled:bg-orange-300/50"
-                      :disabled="isMutating"
-                    >
-                      Сохранить
-                    </button>
-                  </form>
-                </div>
-              </article>
-            </section>
-
-            <section
-              v-else-if="activeTab === 'bookings'"
-              class="space-y-4"
-            >
-              <article class="space-y-4">
-                <div
-                  v-if="!sortedBookings.length"
-                  class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
-                >
-                  Брони пока не появились.
-                </div>
-
-                <div
-                  v-for="booking in sortedBookings"
-                  :key="booking.id"
-                  class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
-                >
-                  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span
-                          class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em]"
-                          :class="bookingStatusClass(booking.status)"
-                        >
-                          {{ booking.status }}
-                        </span>
-                        <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
-                          Booking #{{ booking.id }}
-                        </span>
-                      </div>
-
-                      <h3 class="mt-4 text-2xl font-black text-white">
-                        {{ zoneNameById(booking.zoneId) }} / {{ placeLabelById(booking.placeId) }}
-                      </h3>
-                      <p class="mt-2 text-sm leading-7 text-zinc-300">
-                        {{ serviceNameById(booking.serviceId) }} • {{ booking.totalPrice }} RUB • {{ booking.participants }} участ.
-                      </p>
-                      <p class="mt-2 text-sm text-zinc-400">
-                        {{ formatDateRange(booking.startTime, booking.endTime) }}
-                      </p>
-                    </div>
-
-                    <form
-                      class="flex flex-col gap-3 sm:min-w-[260px]"
-                      @submit.prevent="updateBookingStatus(booking.id)"
-                    >
-                      <div>
-                        <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Статус</label>
-                        <select
-                          v-model="bookingStatusDrafts[booking.id]"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                        >
-                          <option
-                            v-for="status in bookingStatusOptions"
-                            :key="status"
-                            :value="status"
-                          >
-                            {{ status }}
-                          </option>
-                        </select>
-                      </div>
-                      <div class="flex gap-2">
-                        <button
-                          type="submit"
-                          class="flex-1 rounded-[0.8rem] bg-cyan-300 px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
-                          :disabled="isMutating"
-                        >
-                          Сохранить
-                        </button>
-                        <button
-                          type="button"
-                          class="flex-1 rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-sm font-bold text-white transition hover:bg-cyan-900/50"
-                          @click="toggleBookingDetails(booking.id)"
-                        >
-                          {{ expandedBookingDetails === booking.id ? 'Скрыть' : 'Подробнее' }}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-
-                  <template v-if="expandedBookingDetails === booking.id">
-                    <div class="mt-4 grid gap-3 lg:grid-cols-2">
-                      <div class="border border-white/8 bg-white/4 p-3 text-sm text-zinc-300">
-                        <p>
-                          <span class="text-zinc-500">Контакт:</span> <span class="text-white">{{ booking.contactName || 'Не указан' }}</span>
-                        </p>
-                        <p class="mt-2">
-                          <span class="text-zinc-500">Email:</span> <span class="text-white">{{ booking.contactEmail || 'Не указан' }}</span>
-                        </p>
-                        <p class="mt-2">
-                          <span class="text-zinc-500">Телефон:</span> <span class="text-white">{{ booking.contactPhone || 'Не указан' }}</span>
-                        </p>
-                      </div>
-                      <div class="border border-white/8 bg-white/4 p-3 text-sm text-zinc-300">
-                        <p>
-                          <span class="text-zinc-500">User ID:</span> <span class="break-all text-white">{{ booking.userId }}</span>
-                        </p>
-                        <p class="mt-2">
-                          <span class="text-zinc-500">Создана:</span> <span class="text-white">{{ formatAdminDateTime(booking.createdAt) }}</span>
-                        </p>
-                        <p class="mt-2">
-                          <span class="text-zinc-500">Обновлена:</span> <span class="text-white">{{ formatAdminDateTime(booking.updatedAt) }}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div
-                      v-if="hasZoneDetails(booking.detailsJson)"
-                      class="mt-4 border border-white/8 bg-[#06131c] p-3"
-                    >
-                      <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
-                        Details JSON
-                      </p>
-                      <pre class="mt-3 overflow-x-auto text-xs leading-6 text-zinc-300">{{ booking.detailsJson }}</pre>
-                    </div>
-                  </template>
-                </div>
-              </article>
-            </section>
-
-            <section
-              v-else
-              class="space-y-4"
-            >
-              <article class="space-y-4">
-                <div
-                  v-if="!sortedShifts.length"
-                  class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
-                >
-                  Смен пока нет.
-                </div>
-
-                <div
-                  v-for="shift in sortedShifts"
-                  :key="shift.id"
-                  class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
-                >
-                  <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/70">
-                          {{ zoneTagName(shift.zone_tag_id ?? undefined) }}
-                        </span>
-                        <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
-                          Shift #{{ shift.id }}
-                        </span>
-                      </div>
-                      <h3 class="mt-4 text-2xl font-black text-white">
-                        {{ formatDateRange(shift.start_time, shift.end_time) }}
-                      </h3>
-                      
-                      <template v-if="expandedShiftDetails === shift.id">
-                        <p class="mt-2 text-sm leading-7 text-zinc-300">
-                          {{ shift.note || 'Без заметки.' }}
-                        </p>
-                        <p class="mt-3 text-sm text-zinc-400">
-                          Создал: <span class="font-semibold text-white">{{ shift.user.full_name }}</span>
-                          <span class="text-zinc-500">{{ shift.user.email }}</span>
-                        </p>
-                      </template>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        class="rounded-[0.75rem] border border-cyan-400/18 bg-cyan-900/20 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-900/40"
-                        @click="toggleShiftDetails(shift.id)"
-                      >
-                        {{ expandedShiftDetails === shift.id ? 'Скрыть детали' : 'Подробнее' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-[0.75rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
-                        @click="toggleShiftEditor(shift.id)"
-                      >
-                        {{ expandedShiftId === shift.id ? 'Скрыть форму' : 'Редактировать' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
-                        :disabled="isMutating"
-                        @click="removeShift(shift.id)"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
-
-                  <form
-                    v-if="expandedShiftId === shift.id"
-                    class="mt-4 space-y-4"
-                    @submit.prevent="updateShift(shift.id)"
-                  >
-                    <div>
-                      <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Zone tag</label>
-                      <select
-                        v-model="ensureShiftDraft(shift.id).zoneTagId"
-                        class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                      >
-                        <option value="">
-                          Без привязки
-                        </option>
-                        <option
-                          v-for="tag in sortedZoneTags"
-                          :key="tag.id"
-                          :value="String(tag.id)"
-                        >
-                          {{ tag.name }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Начало</label>
-                        <input
-                          v-model="ensureShiftDraft(shift.id).startTime"
-                          type="datetime-local"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                        >
-                      </div>
-                      <div>
-                        <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Конец</label>
-                        <input
-                          v-model="ensureShiftDraft(shift.id).endTime"
-                          type="datetime-local"
-                          class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                        >
-                      </div>
-                    </div>
-
-                    <div>
-                      <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Заметка</label>
-                      <textarea
-                        v-model="ensureShiftDraft(shift.id).note"
-                        rows="4"
-                        class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      class="rounded-[0.8rem] bg-cyan-300 px-5 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
-                      :disabled="isMutating"
-                    >
-                      Сохранить смену
-                    </button>
-                  </form>
-                </div>
-              </article>
-            </section>
-          </template>
-        </main>
+  <div class="space-y-6">
+    <!-- Quick Stats Grid (Horizontal widescreen view) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div
+        v-for="stat in dashboardStats"
+        :key="stat.label"
+        class="rounded-[1.25rem] border border-white/5 bg-[#050f17] p-5 text-center shadow-xl transition-transform hover:scale-[1.02]"
+      >
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+          {{ stat.label }}
+        </p>
+        <p class="mt-2 text-2xl font-black text-white leading-none">
+          {{ stat.value }}
+        </p>
       </div>
     </div>
 
+    <!-- Header Card with responsive action button -->
+    <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-[1.25rem] border border-white/5 bg-[#050f17] p-8 shadow-2xl">
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-300/50">{{ activeTabItem.eyebrow }}</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-white">{{ activeTabItem.title }}</h1>
+        <p class="mt-3 text-sm text-zinc-400 max-w-2xl leading-relaxed">{{ activeTabItem.description }}</p>
+      </div>
+      <div class="flex items-center gap-4 flex-shrink-0">
+        <button
+          v-if="showCreateAction"
+          type="button"
+          class="rounded-[0.9rem] bg-cyan-300 px-6 py-3 text-xs font-black uppercase tracking-widest text-[#020c13] transition hover:bg-cyan-200 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95"
+          @click="openCreateModal"
+        >
+          {{ createModalMeta.buttonLabel }}
+        </button>
+      </div>
+    </header>
+
+    <!-- Feedback Message -->
+    <div
+      v-if="feedbackMessage"
+      class="rounded-[0.8rem] border px-4 py-3 text-sm shadow-lg"
+      :class="feedbackTone === 'error' ? 'border-orange-300/30 bg-orange-500/10 text-orange-100' : 'border-emerald-300/30 bg-emerald-500/10 text-emerald-100'"
+    >
+      {{ feedbackMessage }}
+    </div>
+
+    <!-- Data Loading State -->
+    <section
+      v-if="isLoading"
+      class="rounded-[1rem] border border-white/5 bg-[#050f17] p-12 text-center text-sm font-medium text-zinc-400"
+    >
+      Загрузка системных данных...
+    </section>
+
+    <!-- Error State -->
+    <section
+      v-else-if="pageError"
+      class="rounded-[1rem] border border-orange-300/20 bg-orange-500/10 p-8"
+    >
+      <p class="text-sm font-bold text-orange-200">Ошибка загрузки: {{ pageError }}</p>
+      <button
+        class="mt-4 rounded-full border border-white/20 px-6 py-2 text-xs font-bold text-white transition hover:bg-white/10"
+        @click="loadAdminData()"
+      >
+        Повторить попытку
+      </button>
+    </section>
+
+    <!-- Content Sections -->
+    <template v-else>
+
+      <!-- Zones Tab -->
+      <section
+        v-if="activeTab === 'zones'"
+        class="space-y-4"
+      >
+        <article class="space-y-4">
+          <div
+            v-if="!sortedZones.length"
+            class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
+          >
+            Пока нет зон. Начни с создания первой записи через кнопку выше.
+          </div>
+
+          <div
+            v-for="zone in sortedZones"
+            :key="zone.id"
+            class="overflow-hidden border border-white/8 bg-[#07141d] shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
+          >
+            <div class="border-b border-white/8 px-4 py-4">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span
+                      class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em]"
+                      :class="zoneBadgeClass(zone.zoneType)"
+                    >
+                      {{ zoneTypeLabel(zone.zoneType) }}
+                    </span>
+                    <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/55">
+                      {{ zoneTagName(zone.zoneTagId) }}
+                    </span>
+                    <span
+                      v-if="zone.isActive"
+                      class="rounded-full border border-emerald-300/20 bg-emerald-500/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-100/80"
+                    >
+                      active
+                    </span>
+                    <span
+                      v-else
+                      class="rounded-full border border-zinc-300/15 bg-zinc-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/70"
+                    >
+                      inactive
+                    </span>
+                  </div>
+                  <h3 class="mt-4 text-2xl font-black text-white">
+                    {{ zone.name }}
+                  </h3>
+                  <p class="mt-2 text-sm leading-7 text-zinc-300">
+                    {{ zone.description || 'Описание не заполнено.' }}
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                  <div class="border border-white/8 bg-white/4 px-3 py-2 text-right">
+                    <p class="text-[11px] uppercase tracking-[0.28em] text-cyan-100/45">
+                      Capacity
+                    </p>
+                    <p class="mt-2 text-2xl font-black text-white">
+                      {{ zone.capacity }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-[0.8rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
+                    @click="toggleZoneEditor(zone.id)"
+                  >
+                    {{ expandedZoneId === zone.id ? 'Скрыть форму' : 'Редактировать' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-[0.8rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
+                    :disabled="isMutating"
+                    @click="removeZone(zone.id, zone.name)"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+
+              <div
+                v-if="hasZoneDetails(zone.detailsJson)"
+                class="mt-4 border border-white/8 bg-[#06131c] p-3"
+              >
+                <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
+                  Details JSON
+                </p>
+                <pre class="mt-3 overflow-x-auto text-xs leading-6 text-zinc-300">{{ zone.detailsJson }}</pre>
+              </div>
+            </div>
+
+            <div
+              v-if="expandedZoneId === zone.id"
+              class="border-b border-white/8 px-4 py-4"
+            >
+              <form
+                class="space-y-4"
+                @submit.prevent="updateZone(zone.id)"
+              >
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Название</label>
+                    <input
+                      v-model="ensureZoneDraft(zone.id).name"
+                      type="text"
+                      class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                    >
+                  </div>
+                  <div>
+                    <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Тип зоны</label>
+                    <select
+                      v-model="ensureZoneDraft(zone.id).type"
+                      class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                    >
+                      <option
+                        v-for="option in zoneTypeOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-[1fr_auto]">
+                  <div>
+                    <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Zone tag</label>
+                    <select
+                      v-model="ensureZoneDraft(zone.id).zoneTagId"
+                      class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                    >
+                      <option
+                        disabled
+                        value=""
+                      >
+                        Выбери tag
+                      </option>
+                      <option
+                        v-for="tag in sortedZoneTags"
+                        :key="tag.id"
+                        :value="String(tag.id)"
+                      >
+                        {{ tag.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="border border-white/8 bg-white/4 p-3 lg:min-w-64">
+                    <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
+                      Создать tag здесь
+                    </p>
+                    <label class="mb-2 mt-3 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Название тега</label>
+                    <div class="flex gap-2">
+                      <input
+                        v-model="ensureZoneEditTagNames(zone.id)[zone.id]"
+                        type="text"
+                        placeholder="Новый tag"
+                        class="min-w-0 flex-1 rounded-[0.75rem] border border-cyan-400/18 bg-[#06131c] px-3 py-2.5 text-sm text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
+                      >
+                      <button
+                        type="button"
+                        class="rounded-[0.75rem] bg-cyan-300 px-4 py-2.5 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
+                        :disabled="isMutating"
+                        @click="createZoneTagFromZoneContext(ensureZoneEditTagNames(zone.id)[zone.id] ?? '', zone.id)"
+                      >
+                        Добавить
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Вместимость</label>
+                    <input
+                      v-model="ensureZoneDraft(zone.id).capacity"
+                      type="number"
+                      min="1"
+                      class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                    >
+                  </div>
+                  <label class="flex items-center gap-3 rounded-[0.9rem] border border-white/8 bg-white/4 px-4 py-3 text-sm text-zinc-200">
+                    <input
+                      v-model="ensureZoneDraft(zone.id).isActive"
+                      type="checkbox"
+                      class="h-4 w-4 accent-cyan-300"
+                    >
+                    Зона активна
+                  </label>
+                </div>
+
+                <div>
+                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Описание</label>
+                  <textarea
+                    v-model="ensureZoneDraft(zone.id).description"
+                    rows="4"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Details JSON</label>
+                  <textarea
+                    v-model="ensureZoneDraft(zone.id).detailsJson"
+                    rows="6"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 font-mono text-sm text-white focus:border-cyan-300 focus:outline-none"
+                  />
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                  <button
+                    type="submit"
+                    class="rounded-[0.85rem] bg-cyan-300 px-5 py-3 text-sm font-black uppercase tracking-[0.28em] text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
+                    :disabled="isMutating"
+                  >
+                    Сохранить изменения
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-[0.85rem] border border-white/10 px-5 py-3 text-sm font-bold text-white transition hover:border-white/25"
+                    :disabled="isMutating"
+                    @click="resetZoneDraft(zone.id)"
+                  >
+                    Сбросить
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="px-4 py-4">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
+                    Places inside this zone
+                  </p>
+                  <p class="mt-2 text-sm leading-7 text-zinc-300">
+                    Все места уже привязаны к текущей зоне. Здесь не нужно думать про `zone_id` и архитектуру отдельно.
+                  </p>
+                </div>
+                <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/55">
+                  {{ placesForZone(zone.id).length }} мест
+                </span>
+              </div>
+
+              <form
+                class="mt-4 grid gap-3 border border-white/8 bg-[#06131c] p-3 lg:grid-cols-[1.15fr_0.75fr_0.75fr_auto]"
+                @submit.prevent="submitPlace(zone.id)"
+              >
+                <div>
+                  <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Label</label>
+                  <input
+                    v-model="ensureNewPlaceForm(zone.id).label"
+                    type="text"
+                    placeholder="Например, PC-07"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
+                  >
+                </div>
+                <div>
+                  <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Sort order</label>
+                  <input
+                    v-model="ensureNewPlaceForm(zone.id).sortOrder"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                  >
+                </div>
+                <div>
+                  <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Configuration ID</label>
+                  <input
+                    v-model="ensureNewPlaceForm(zone.id).configurationId"
+                    type="number"
+                    min="1"
+                    placeholder="Если нужен"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
+                  >
+                </div>
+                <div class="lg:self-end">
+                  <button
+                    type="submit"
+                    class="w-full rounded-[0.8rem] bg-white px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-white/50"
+                    :disabled="isMutating"
+                  >
+                    Добавить место
+                  </button>
+                </div>
+                <label class="lg:col-span-4 flex items-center gap-3 text-sm text-zinc-300">
+                  <input
+                    v-model="ensureNewPlaceForm(zone.id).isActive"
+                    type="checkbox"
+                    class="h-4 w-4 accent-cyan-300"
+                  >
+                  Место активно. `Configuration ID` можно оставить пустым, если для зоны он не нужен.
+                </label>
+              </form>
+
+              <div
+                v-if="!placesForZone(zone.id).length"
+                class="mt-4 border border-white/8 bg-white/4 px-4 py-3 text-sm text-zinc-300"
+              >
+                У этой зоны пока нет мест.
+              </div>
+
+              <div
+                v-else
+                class="mt-4 grid gap-3"
+              >
+                <div
+                  v-for="place in placesForZone(zone.id)"
+                  :key="place.id"
+                  class="border border-white/8 bg-white/4 p-3"
+                >
+                  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/70">
+                          {{ place.label }}
+                        </span>
+                        <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
+                          sort {{ place.sortOrder }}
+                        </span>
+                        <span
+                          v-if="place.isActive"
+                          class="rounded-full border border-emerald-300/20 bg-emerald-500/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-100/80"
+                        >
+                          active
+                        </span>
+                        <span
+                          v-else
+                          class="rounded-full border border-zinc-300/15 bg-zinc-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/70"
+                        >
+                          inactive
+                        </span>
+                      </div>
+                      <p class="mt-3 text-sm text-zinc-300">
+                        Configuration ID: <span class="font-bold text-white">{{ place.configurationId ?? 'не задан' }}</span>
+                      </p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        class="rounded-[0.75rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
+                        @click="togglePlaceEditor(place.id)"
+                      >
+                        {{ expandedPlaceId === place.id ? 'Скрыть форму' : 'Редактировать' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
+                        :disabled="isMutating"
+                        @click="removePlace(place.id, place.label)"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+
+                  <form
+                    v-if="expandedPlaceId === place.id"
+                    class="mt-3 grid gap-3 lg:grid-cols-[1fr_0.7fr_0.7fr_auto]"
+                    @submit.prevent="updatePlace(place.id)"
+                  >
+                    <div>
+                      <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Label</label>
+                      <input
+                        v-model="ensurePlaceDraft(place.id).label"
+                        type="text"
+                        class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                      >
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Sort order</label>
+                      <input
+                        v-model="ensurePlaceDraft(place.id).sortOrder"
+                        type="number"
+                        min="0"
+                        class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                      >
+                    </div>
+                    <div>
+                      <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Configuration ID</label>
+                      <input
+                        v-model="ensurePlaceDraft(place.id).configurationId"
+                        type="number"
+                        min="1"
+                        placeholder="Если нужен"
+                        class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#071926] px-4 py-3 text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none"
+                      >
+                    </div>
+                    <div class="lg:self-end">
+                      <button
+                        type="submit"
+                        class="w-full rounded-[0.8rem] bg-cyan-300 px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
+                        :disabled="isMutating"
+                      >
+                        Сохранить
+                      </button>
+                    </div>
+                    <label class="lg:col-span-4 flex items-center gap-3 text-sm text-zinc-300">
+                      <input
+                        v-model="ensurePlaceDraft(place.id).isActive"
+                        type="checkbox"
+                        class="h-4 w-4 accent-cyan-300"
+                      >
+                      Место активно
+                    </label>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- Zone Tags Tab -->
+      <section
+        v-if="activeTab === 'zone-tags'"
+        class="space-y-4"
+      >
+        <article class="space-y-4">
+          <div
+            v-if="!sortedZoneTags.length"
+            class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
+          >
+            Теги ещё не созданы.
+          </div>
+
+          <div
+            v-for="tag in sortedZoneTags"
+            :key="tag.id"
+            class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
+          >
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
+                  Tag #{{ tag.id }}
+                </p>
+                <h3 class="mt-2 text-2xl font-black text-white">
+                  {{ tag.name }}
+                </h3>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-orange-200/40"
+                  @click="toggleZoneTagEditor(tag.id)"
+                >
+                  {{ expandedZoneTagId === tag.id ? 'Скрыть форму' : 'Редактировать' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
+                  :disabled="isMutating"
+                  @click="removeZoneTag(tag.id, tag.name)"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+
+            <form
+              v-if="expandedZoneTagId === tag.id"
+              class="mt-3 flex flex-col gap-3 sm:flex-row"
+              @submit.prevent="updateZoneTag(tag.id)"
+            >
+              <div class="min-w-0 flex-1">
+                <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Название тега</label>
+                <input
+                  v-model="zoneTagDrafts[tag.id]"
+                  type="text"
+                  class="min-w-0 w-full rounded-[0.8rem] border border-orange-300/18 bg-[#06131c] px-4 py-3 text-white focus:border-orange-300 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                class="rounded-[0.8rem] bg-orange-300 px-5 py-3 text-sm font-black text-[#020c13] transition hover:bg-orange-200 disabled:cursor-not-allowed disabled:bg-orange-300/50"
+                :disabled="isMutating"
+              >
+                Сохранить
+              </button>
+            </form>
+          </div>
+        </article>
+      </section>
+
+      <!-- Bookings Tab -->
+      <section
+        v-if="activeTab === 'bookings'"
+        class="space-y-4"
+      >
+        <article class="space-y-4">
+          <div
+            v-if="!sortedBookings.length"
+            class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
+          >
+            Брони пока не появились.
+          </div>
+
+          <div
+            v-for="booking in sortedBookings"
+            :key="booking.id"
+            class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
+          >
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em]"
+                    :class="bookingStatusClass(booking.status)"
+                  >
+                    {{ booking.status }}
+                  </span>
+                  <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
+                    Booking #{{ booking.id }}
+                  </span>
+                </div>
+
+                <h3 class="mt-4 text-2xl font-black text-white">
+                  {{ zoneNameById(booking.zoneId) }} / {{ placeLabelById(booking.placeId) }}
+                </h3>
+                <p class="mt-2 text-sm leading-7 text-zinc-300">
+                  {{ serviceNameById(booking.serviceId) }} • {{ booking.totalPrice }} RUB • {{ booking.participants }} участ.
+                </p>
+                <p class="mt-2 text-sm text-zinc-400">
+                  {{ formatDateRange(booking.startTime, booking.endTime) }}
+                </p>
+              </div>
+
+              <form
+                class="flex flex-col gap-3 sm:min-w-[260px]"
+                @submit.prevent="updateBookingStatus(booking.id)"
+              >
+                <div>
+                  <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-cyan-100/45">Статус</label>
+                  <select
+                    v-model="bookingStatusDrafts[booking.id]"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                  >
+                    <option
+                      v-for="status in bookingStatusOptions"
+                      :key="status"
+                      :value="status"
+                    >
+                      {{ status }}
+                    </option>
+                  </select>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    type="submit"
+                    class="flex-1 rounded-[0.8rem] bg-cyan-300 px-4 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
+                    :disabled="isMutating"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    class="flex-1 rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-sm font-bold text-white transition hover:bg-cyan-900/50"
+                    @click="toggleBookingDetails(booking.id)"
+                  >
+                    {{ expandedBookingDetails === booking.id ? 'Скрыть' : 'Подробнее' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <template v-if="expandedBookingDetails === booking.id">
+              <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                <div class="border border-white/8 bg-white/4 p-3 text-sm text-zinc-300">
+                  <p>
+                    <span class="text-zinc-500">Контакт:</span> <span class="text-white">{{ booking.contactName || 'Не указан' }}</span>
+                  </p>
+                  <p class="mt-2">
+                    <span class="text-zinc-500">Email:</span> <span class="text-white">{{ booking.contactEmail || 'Не указан' }}</span>
+                  </p>
+                  <p class="mt-2">
+                    <span class="text-zinc-500">Телефон:</span> <span class="text-white">{{ booking.contactPhone || 'Не указан' }}</span>
+                  </p>
+                </div>
+                <div class="border border-white/8 bg-white/4 p-3 text-sm text-zinc-300">
+                  <p>
+                    <span class="text-zinc-500">User ID:</span> <span class="break-all text-white">{{ booking.userId }}</span>
+                  </p>
+                  <p class="mt-2">
+                    <span class="text-zinc-500">Создана:</span> <span class="text-white">{{ formatAdminDateTime(booking.createdAt) }}</span>
+                  </p>
+                  <p class="mt-2">
+                    <span class="text-zinc-500">Обновлена:</span> <span class="text-white">{{ formatAdminDateTime(booking.updatedAt) }}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div
+                v-if="hasZoneDetails(booking.detailsJson)"
+                class="mt-4 border border-white/8 bg-[#06131c] p-3"
+              >
+                <p class="text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">
+                  Details JSON
+                </p>
+                <pre class="mt-3 overflow-x-auto text-xs leading-6 text-zinc-300">{{ booking.detailsJson }}</pre>
+              </div>
+            </template>
+          </div>
+        </article>
+      </section>
+
+      <!-- Shifts Tab -->
+      <section
+        v-if="activeTab === 'shifts'"
+        class="space-y-4"
+      >
+        <article class="space-y-4">
+          <div
+            v-if="!sortedShifts.length"
+            class="border border-white/8 bg-[#07141d] px-4 py-5 text-sm text-zinc-300"
+          >
+            Смен пока нет.
+          </div>
+
+          <div
+            v-for="shift in sortedShifts"
+            :key="shift.id"
+            class="border border-white/8 bg-[#07141d] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)]"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-cyan-100/70">
+                    {{ zoneTagName(shift.zone_tag_id ?? undefined) }}
+                  </span>
+                  <span class="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-300/75">
+                    Shift #{{ shift.id }}
+                  </span>
+                </div>
+                <h3 class="mt-4 text-2xl font-black text-white">
+                  {{ formatDateRange(shift.start_time, shift.end_time) }}
+                </h3>
+
+                <template v-if="expandedShiftDetails === shift.id">
+                  <p class="mt-2 text-sm leading-7 text-zinc-300">
+                    {{ shift.note || 'Без заметки.' }}
+                  </p>
+                  <p class="mt-3 text-sm text-zinc-400">
+                    Создал: <span class="font-semibold text-white">{{ shift.user.full_name }}</span>
+                    <span class="text-zinc-500">{{ shift.user.email }}</span>
+                  </p>
+                </template>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  class="rounded-[0.75rem] border border-cyan-400/18 bg-cyan-900/20 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-900/40"
+                  @click="toggleShiftDetails(shift.id)"
+                >
+                  {{ expandedShiftDetails === shift.id ? 'Скрыть детали' : 'Подробнее' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-[0.75rem] border border-cyan-400/18 px-4 py-2.5 text-sm font-bold text-white transition hover:border-cyan-300/40"
+                  @click="toggleShiftEditor(shift.id)"
+                >
+                  {{ expandedShiftId === shift.id ? 'Скрыть форму' : 'Редактировать' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-[0.75rem] border border-orange-300/18 px-4 py-2.5 text-sm font-bold text-orange-100 transition hover:border-orange-200/40"
+                  :disabled="isMutating"
+                  @click="removeShift(shift.id)"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+
+            <form
+              v-if="expandedShiftId === shift.id"
+              class="mt-4 space-y-4"
+              @submit.prevent="updateShift(shift.id)"
+            >
+              <div>
+                <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Zone tag</label>
+                <select
+                  v-model="ensureShiftDraft(shift.id).zoneTagId"
+                  class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                >
+                  <option value="">
+                    Без привязки
+                  </option>
+                  <option
+                    v-for="tag in sortedZoneTags"
+                    :key="tag.id"
+                    :value="String(tag.id)"
+                  >
+                    {{ tag.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Начало</label>
+                  <input
+                    v-model="ensureShiftDraft(shift.id).startTime"
+                    type="datetime-local"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                  >
+                </div>
+                <div>
+                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Конец</label>
+                  <input
+                    v-model="ensureShiftDraft(shift.id).endTime"
+                    type="datetime-local"
+                    class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                  >
+                </div>
+              </div>
+
+              <div>
+                <label class="mb-3 block text-xs font-bold uppercase tracking-[0.28em] text-cyan-100/45">Заметка</label>
+                <textarea
+                  v-model="ensureShiftDraft(shift.id).note"
+                  rows="4"
+                  class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="rounded-[0.8rem] bg-cyan-300 px-5 py-3 text-sm font-black text-[#020c13] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/50"
+                :disabled="isMutating"
+              >
+                Сохранить смену
+              </button>
+            </form>
+          </div>
+        </article>
+      </section>
+    </template>
+
+    <!-- Modal for creation -->
     <div
       v-if="isCreateModalOpen"
       class="fixed inset-0 z-[60] flex items-center justify-center bg-[#020c13]/78 px-3 py-6 backdrop-blur-sm"
@@ -1150,7 +1060,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue"
+import { computed, onBeforeUnmount, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
 import {
   createAdminPlace,
   getAdminBookings,
@@ -1310,7 +1221,17 @@ const zoneTypeOptions = [
   { value: 'sys', label: 'System' }
 ]
 
-const activeTab = ref<AdminTab>('zones')
+const route = useRoute()
+const activeTab = ref<AdminTab>((route.query.tab as AdminTab) || 'zones')
+
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (newTab && ['zones', 'zone-tags', 'bookings', 'shifts'].includes(newTab as string)) {
+      activeTab.value = newTab as AdminTab
+    }
+  }
+)
 const isLoading = ref(true)
 const isMutating = ref(false)
 const pageError = ref('')
