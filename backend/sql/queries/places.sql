@@ -75,3 +75,12 @@ WHERE zone_id = sqlc.arg(zone_id)
   AND start_time < sqlc.arg(date_end)
   AND end_time > sqlc.arg(date_start)
 ORDER BY start_time, id;
+
+-- name: ListLoungeBookingsForDate :many
+SELECT id, zone_id, start_time, end_time, participants, status
+FROM bookings
+WHERE zone_id = sqlc.arg(zone_id)
+  AND status NOT IN ('canceled')
+  AND start_time < sqlc.arg(date_end)
+  AND end_time > sqlc.arg(date_start)
+ORDER BY start_time, id;

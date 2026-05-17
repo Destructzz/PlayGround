@@ -226,6 +226,58 @@ func (q *Queries) ListActiveZonePlaces(ctx context.Context, zoneID int64) ([]Zon
 	return items, nil
 }
 
+const listLoungeBookingsForDate = `-- name: ListLoungeBookingsForDate :many
+SELECT id, zone_id, start_time, end_time, participants, status
+FROM bookings
+WHERE zone_id = $1
+  AND status NOT IN ('canceled')
+  AND start_time < $2
+  AND end_time > $3
+ORDER BY start_time, id
+`
+
+type ListLoungeBookingsForDateParams struct {
+	ZoneID    int64              `json:"zone_id"`
+	DateEnd   pgtype.Timestamptz `json:"date_end"`
+	DateStart pgtype.Timestamptz `json:"date_start"`
+}
+
+type ListLoungeBookingsForDateRow struct {
+	ID           int64              `json:"id"`
+	ZoneID       int64              `json:"zone_id"`
+	StartTime    pgtype.Timestamptz `json:"start_time"`
+	EndTime      pgtype.Timestamptz `json:"end_time"`
+	Participants int32              `json:"participants"`
+	Status       BookingStatus      `json:"status"`
+}
+
+func (q *Queries) ListLoungeBookingsForDate(ctx context.Context, arg ListLoungeBookingsForDateParams) ([]ListLoungeBookingsForDateRow, error) {
+	rows, err := q.db.Query(ctx, listLoungeBookingsForDate, arg.ZoneID, arg.DateEnd, arg.DateStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListLoungeBookingsForDateRow
+	for rows.Next() {
+		var i ListLoungeBookingsForDateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ZoneID,
+			&i.StartTime,
+			&i.EndTime,
+			&i.Participants,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listZonePlaceBookingsForDate = `-- name: ListZonePlaceBookingsForDate :many
 SELECT id, zone_id, service_id, place_id, start_time, end_time, status
 FROM bookings

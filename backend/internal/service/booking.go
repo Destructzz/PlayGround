@@ -34,6 +34,8 @@ func NewBooking(queries *sqlc.Queries) *BookingService {
 
 // CreateBooking creates a booking with the provided session user ID.
 // It enforces overlap, place availability, and capacity invariants.
+// For lounge and event zones (no dedicated place), exclusive overlap check is
+// skipped — only capacity is enforced, since multiple groups can co-exist.
 func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, dto domain.CreateBookingRequest) (sqlc.Booking, error) {
 	startTime, err := time.Parse(time.RFC3339, dto.StartTime)
 	if err != nil {
@@ -53,6 +55,44 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, 
 		return sqlc.Booking{}, ErrPastBooking
 	}
 
+	zone, err := b.queries.GetZoneByID(ctx, dto.ZoneID)
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+
+	// For lounge and event zones, if no ServiceID is provided, automatically find or create a free service.
+	if zone.ZoneType == sqlc.ZoneTypeLounge || zone.ZoneType == sqlc.ZoneTypeEvent {
+		if dto.ServiceID == 0 {
+			services, err := b.queries.ListServicesByZoneID(ctx, zone.ID)
+			if err == nil && len(services) > 0 {
+				dto.ServiceID = services[0].ID
+			} else {
+				// Create default free service for the zone
+				price := pgtype.Numeric{}
+				_ = price.Scan("0.00")
+				createdService, err := b.queries.CreateService(ctx, sqlc.CreateServiceParams{
+					Name:     zone.Name + " Booking",
+					ZoneID:   zone.ID,
+					Duration: 60, // 1 hour standard slot duration
+					Price:    price,
+					Currency: "RUB",
+					Description: pgtype.Text{
+						String: "Бесплатное бронирование",
+						Valid:  true,
+					},
+					IsActive:    true,
+					DetailsJson: []byte("{}"),
+				})
+				if err != nil {
+					return sqlc.Booking{}, err
+				}
+				dto.ServiceID = createdService.ID
+			}
+		}
+	} else if dto.ServiceID == 0 {
+		return sqlc.Booking{}, errors.New("service_id is required for gaming zones")
+	}
+
 	serviceEntity, err := b.queries.GetServiceByID(ctx, dto.ServiceID)
 	if err != nil {
 		return sqlc.Booking{}, err
@@ -64,16 +104,20 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, 
 		return sqlc.Booking{}, ErrInactiveService
 	}
 
-	serviceDuration := time.Duration(serviceEntity.Duration) * time.Minute
-	if !startTime.Add(serviceDuration).Equal(endTime) {
-		return sqlc.Booking{}, ErrInvalidServiceWindow
+	// For lounge/event zones, we bypass the strict duration restriction because the booking duration is flexible.
+	if zone.ZoneType == sqlc.ZoneTypeGame {
+		serviceDuration := time.Duration(serviceEntity.Duration) * time.Minute
+		if !startTime.Add(serviceDuration).Equal(endTime) {
+			return sqlc.Booking{}, ErrInvalidServiceWindow
+		}
 	}
 
 	startTZ := pgtype.Timestamptz{Time: startTime, Valid: true}
 	endTZ := pgtype.Timestamptz{Time: endTime, Valid: true}
 
-	if dto.PlaceID == nil {
-		// Zone-level overlap is only relevant for bookings without a dedicated place.
+	// For game zones without a dedicated place: check exclusive overlap.
+	// For lounge/event zones: skip overlap — multiple groups share capacity.
+	if dto.PlaceID == nil && zone.ZoneType == sqlc.ZoneTypeGame {
 		overlapCount, err := b.queries.CheckZoneBookingOverlap(ctx, sqlc.CheckZoneBookingOverlapParams{
 			ZoneID:    dto.ZoneID,
 			ServiceID: dto.ServiceID,
@@ -120,11 +164,6 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID pgtype.UUID, 
 		EndTime:   endTZ,
 		StartTime: startTZ,
 	})
-	if err != nil {
-		return sqlc.Booking{}, err
-	}
-
-	zone, err := b.queries.GetZoneByID(ctx, dto.ZoneID)
 	if err != nil {
 		return sqlc.Booking{}, err
 	}

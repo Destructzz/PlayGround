@@ -6,7 +6,7 @@ import (
 
 type CreateBookingRequest struct {
 	ZoneID       int64              `json:"zone_id" binding:"required"`
-	ServiceID    int64              `json:"service_id" binding:"required"`
+	ServiceID    int64              `json:"service_id" binding:"omitempty"`
 	PlaceID      *int64             `json:"place_id" binding:"omitempty"`
 	StartTime    string             `json:"start_time" binding:"required"`
 	EndTime      string             `json:"end_time" binding:"required"`

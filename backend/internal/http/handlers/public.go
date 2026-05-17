@@ -178,3 +178,61 @@ func (p *Public) GamingAvailability(c *gin.Context) {
 		response.WithData("bookings", data.Bookings),
 	).JSON(c)
 }
+
+// LoungeAvailability returns hourly slot availability for a lounge zone on a given date.
+// @Summary     Lounge availability
+// @Description Returns hourly slots with remaining capacity for a lounge zone
+// @Tags        public
+// @Produce     json
+// @Param       id path int true "Zone ID"
+// @Param       date query string true "Date in YYYY-MM-DD"
+// @Success     200 {object} map[string]interface{}
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/public/lounge/{id}/availability [get]
+func (p *Public) LoungeAvailability(c *gin.Context) {
+	rawID := c.Param("id")
+	zoneID, err := pkg.ParsePositiveInt64(rawID)
+	if err != nil || zoneID <= 0 {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("invalid_zone_id", "zone id must be a positive integer", nil),
+		).JSON(c)
+		return
+	}
+
+	rawDate := c.Query("date")
+	if rawDate == "" {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("invalid_date", "date query parameter is required (YYYY-MM-DD)", nil),
+		).JSON(c)
+		return
+	}
+
+	selectedDate, err := pkg.ParseDateYYYYMMDD(rawDate)
+	if err != nil {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("invalid_date", "date must be in YYYY-MM-DD format", nil),
+		).JSON(c)
+		return
+	}
+
+	data, err := p.publicService.LoungeAvailability(c.Request.Context(), zoneID, selectedDate)
+	if err != nil {
+		zap.L().Warn("lounge availability error", zap.Int64("zone_id", zoneID), zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("availability_error", "Failed to load lounge availability", nil),
+		).JSON(c)
+		return
+	}
+
+	response.NewResponseBuilder(
+		response.WithData("zone_id", data.ZoneID),
+		response.WithData("capacity", data.Capacity),
+		response.WithData("date", data.Date),
+		response.WithData("slots", data.Slots),
+	).JSON(c)
+}

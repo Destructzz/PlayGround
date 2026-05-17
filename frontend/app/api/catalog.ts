@@ -4,6 +4,7 @@ import type {
   GamingCatalogResponse,
   HomeCatalogResponse,
   LoungeCatalogResponse,
+  LoungeAvailabilityResponse,
   ShiftListResponse
 } from './types'
 
@@ -19,6 +20,12 @@ export function getGamingCatalog() {
 
 export function getLoungeCatalog() {
   return apiFetch<LoungeCatalogResponse>(`${PUBLIC_API_PREFIX}/lounge`)
+}
+
+export function getLoungeAvailability(zoneId: number, date: string) {
+  return apiFetch<LoungeAvailabilityResponse>(
+    `${PUBLIC_API_PREFIX}/lounge/${zoneId}/availability?date=${date}`
+  )
 }
 
 export function getEventCatalog() {

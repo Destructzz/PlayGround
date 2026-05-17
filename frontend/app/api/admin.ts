@@ -18,8 +18,12 @@ import type {
   PatchShiftPayload,
   PatchZonePayload,
   PatchZoneTagPayload,
-  ShiftListResponse
+  ShiftListResponse,
+  CreateServicePayload,
+  PatchServicePayload,
+  AdminServiceResponse
 } from './types'
+
 
 const withAuth = {
   credentials: 'include' as const
@@ -148,3 +152,27 @@ export function deleteAdminShift(id: number) {
     method: 'DELETE'
   })
 }
+
+export function createAdminService(payload: CreateServicePayload) {
+  return apiFetch<AdminServiceResponse>('/api/v1/service', {
+    ...withAuth,
+    method: 'POST',
+    body: payload
+  })
+}
+
+export function patchAdminService(id: number, payload: PatchServicePayload) {
+  return apiFetch<AdminServiceResponse>(`/api/v1/service/${id}`, {
+    ...withAuth,
+    method: 'PATCH',
+    body: payload
+  })
+}
+
+export function deleteAdminService(id: number) {
+  return apiFetch(`/api/v1/service/${id}`, {
+    ...withAuth,
+    method: 'DELETE'
+  })
+}
+

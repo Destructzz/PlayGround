@@ -16,6 +16,15 @@ export function createBooking(payload: CreateBookingPayload) {
   })
 }
 
+/** Creates a lounge/event booking — contact info is auto-filled from the session on the backend. */
+export function createSessionBooking(payload: Omit<CreateBookingPayload, 'contact_name' | 'contact_email' | 'contact_phone'>) {
+  return apiFetch<BookingResponse>(BOOKING_API_PREFIX, {
+    method: 'POST',
+    credentials: 'include',
+    body: payload
+  })
+}
+
 export function getMyBookings() {
   return apiFetch<{ bookings: any[] }>(`${BOOKING_API_PREFIX}/my`, {
     credentials: 'include'

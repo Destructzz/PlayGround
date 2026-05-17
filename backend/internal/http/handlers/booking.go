@@ -58,6 +58,18 @@ func (b *Booking) Create(c *gin.Context) {
 		return
 	}
 
+	// Auto-fill contact info from the authenticated session user
+	// if the client did not provide them explicitly.
+	if req.ContactName == "" {
+		req.ContactName = user.FullName
+	}
+	if req.ContactEmail == "" {
+		req.ContactEmail = user.Email
+	}
+	if req.ContactPhone == "" && user.Phone.Valid {
+		req.ContactPhone = user.Phone.String
+	}
+
 	booking, err := b.bookingService.CreateBooking(c.Request.Context(), user.ID, req)
 	if err != nil {
 		switch {

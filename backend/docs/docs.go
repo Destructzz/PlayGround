@@ -1253,6 +1253,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/public/lounge/{id}/availability": {
+            "get": {
+                "description": "Returns hourly slots with remaining capacity for a lounge zone",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Lounge availability",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date in YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/seed": {
             "get": {
                 "description": "Returns current seed data snapshot in non-production environments",
@@ -2637,7 +2686,6 @@ const docTemplate = `{
             "required": [
                 "end_time",
                 "participants",
-                "service_id",
                 "start_time",
                 "zone_id"
             ],

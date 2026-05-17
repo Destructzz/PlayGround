@@ -179,6 +179,21 @@ export interface GamingAvailabilityResponse extends ApiResponseMeta {
   bookings: GamingAvailabilityBooking[]
 }
 
+export interface LoungeSlot {
+  hour: number
+  label: string
+  booked_participants: number
+  remaining: number
+  available: boolean
+}
+
+export interface LoungeAvailabilityResponse extends ApiResponseMeta {
+  zone_id: number
+  capacity: number
+  date: string
+  slots: LoungeSlot[]
+}
+
 export interface AdminService {
   id: number
   name: string
@@ -316,3 +331,30 @@ export interface PatchShiftPayload {
   zone_tag_id?: number
   note?: string
 }
+
+export interface CreateServicePayload {
+  name: string
+  zone_id: number
+  duration: number
+  price: number
+  currency?: string
+  description?: string
+  is_active?: boolean
+  details_json?: string
+}
+
+export interface PatchServicePayload {
+  name?: string
+  zone_id?: number
+  duration?: number
+  price?: number
+  currency?: string
+  description?: string
+  is_active?: boolean
+  details_json?: string
+}
+
+export interface AdminServiceResponse extends ApiResponseMeta {
+  service: AdminService
+}
+

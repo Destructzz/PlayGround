@@ -58,6 +58,7 @@ type Querier interface {
 	ListBookingsByUser(ctx context.Context, userID pgtype.UUID) ([]Booking, error)
 	ListComputerConfigurations(ctx context.Context) ([]ComputerConfiguration, error)
 	ListComputerConfigurationsByZoneTagIDs(ctx context.Context, dollar_1 []int64) ([]ComputerConfiguration, error)
+	ListLoungeBookingsForDate(ctx context.Context, arg ListLoungeBookingsForDateParams) ([]ListLoungeBookingsForDateRow, error)
 	ListPayments(ctx context.Context) ([]Payment, error)
 	ListPings(ctx context.Context) ([]Ping, error)
 	ListServices(ctx context.Context) ([]Service, error)

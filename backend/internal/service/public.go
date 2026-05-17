@@ -97,6 +97,21 @@ type GamingAvailability struct {
 	Bookings []GamingAvailabilityBooking `json:"bookings"`
 }
 
+type LoungeSlot struct {
+	Hour              int    `json:"hour"`
+	Label             string `json:"label"`
+	BookedParticipants int32  `json:"booked_participants"`
+	Remaining         int32  `json:"remaining"`
+	Available         bool   `json:"available"`
+}
+
+type LoungeAvailability struct {
+	ZoneID   int64        `json:"zone_id"`
+	Capacity int32        `json:"capacity"`
+	Date     string       `json:"date"`
+	Slots    []LoungeSlot `json:"slots"`
+}
+
 func (s *PublicService) HomeCatalog(ctx context.Context) (HomeCatalog, error) {
 	zones, err := s.queries.ListZonesWithServices(ctx)
 	if err != nil {
@@ -267,6 +282,66 @@ func (s *PublicService) GamingAvailability(ctx context.Context, zoneID int64, se
 		ZoneID:   zoneID,
 		Date:     dateStart.Format("2006-01-02"),
 		Bookings: items,
+	}, nil
+}
+
+func (s *PublicService) LoungeAvailability(ctx context.Context, zoneID int64, selectedDate time.Time) (LoungeAvailability, error) {
+	zone, err := s.queries.GetZoneByID(ctx, zoneID)
+	if err != nil {
+		return LoungeAvailability{}, err
+	}
+
+	// Working hours: 10:00–23:00 Moscow time (UTC+3)
+	loc := time.FixedZone("MSK", 3*3600)
+	dayStart := time.Date(selectedDate.Year(), selectedDate.Month(), selectedDate.Day(), 0, 0, 0, 0, loc)
+	dayEnd := dayStart.Add(24 * time.Hour)
+
+	rows, err := s.queries.ListLoungeBookingsForDate(ctx, sqlc.ListLoungeBookingsForDateParams{
+		ZoneID:  zoneID,
+		DateEnd: pgtype.Timestamptz{Time: dayEnd, Valid: true},
+		DateStart: pgtype.Timestamptz{Time: dayStart, Valid: true},
+	})
+	if err != nil {
+		return LoungeAvailability{}, err
+	}
+
+	const openHour = 10
+	const closeHour = 23
+	slots := make([]LoungeSlot, 0, closeHour-openHour)
+
+	for h := openHour; h < closeHour; h++ {
+		slotStart := time.Date(selectedDate.Year(), selectedDate.Month(), selectedDate.Day(), h, 0, 0, 0, loc)
+		slotEnd := slotStart.Add(time.Hour)
+
+		var booked int32
+		for _, row := range rows {
+			rowStart := row.StartTime.Time
+			rowEnd := row.EndTime.Time
+			// Overlap: row starts before slot ends AND row ends after slot starts
+			if rowStart.Before(slotEnd) && rowEnd.After(slotStart) {
+				booked += row.Participants
+			}
+		}
+
+		remaining := zone.Capacity - booked
+		if remaining < 0 {
+			remaining = 0
+		}
+
+		slots = append(slots, LoungeSlot{
+			Hour:              h,
+			Label:             slotStart.Format("15:04") + "–" + slotEnd.Format("15:04"),
+			BookedParticipants: booked,
+			Remaining:         remaining,
+			Available:         remaining > 0,
+		})
+	}
+
+	return LoungeAvailability{
+		ZoneID:   zoneID,
+		Capacity: zone.Capacity,
+		Date:     dayStart.Format("2006-01-02"),
+		Slots:    slots,
 	}, nil
 }
 

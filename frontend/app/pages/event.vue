@@ -1,209 +1,190 @@
 <template>
-  <div class="min-h-screen bg-[#020c13] pb-24 pt-24 text-white transition-colors duration-500">
+  <div class="min-h-screen bg-[#020c13] pb-24 pt-24 text-white">
     <div class="mx-auto flex max-w-[1400px] flex-col gap-10 px-6 sm:px-10 lg:px-12">
-      <div
-        v-if="isClientReady"
-        data-testid="event-client-ready"
-        class="hidden"
-      />
       <ExperienceHero
         eyebrow="Event zone"
-        title="Собранный event flow до запуска backend"
-        description="Отдельный публичный маршрут для афиши и регистрации: карточки событий, sold-out состояния, локальная форма участия и deterministic preview всех UX-состояний."
+        title="Афиша событий"
+        description="Турниры, митапы, community-вечера — регистрация в один клик для авторизованных гостей."
         :stats="heroStats"
         accent="#f472b6"
       />
 
+      <!-- Loading -->
       <ExperienceStatePanel
-        v-if="isLoading"
-        :title="mockStateLabels.loading.title"
-        :description="mockStateLabels.loading.description"
-        hint="state=loading"
+        v-if="catalogLoading"
+        title="Загружаем афишу"
+        description="Подтягиваем актуальные события и доступность мест."
+        hint="loading..."
       />
 
-      <ExperienceStatePanel
-        v-else-if="isSuccessPreview"
-        :title="mockStateLabels.success.title"
-        :description="mockStateLabels.success.description"
-        hint="state=success"
+      <!-- Error -->
+      <div
+        v-else-if="catalogError"
+        class="rounded-[0.9rem] border border-orange-300/35 bg-orange-500/12 px-5 py-4 text-sm text-orange-100"
       >
-        <template #actions>
-          <NuxtLink
-            to="/event"
-            class="rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:bg-zinc-200"
-          >Открыть афишу</NuxtLink>
-        </template>
-      </ExperienceStatePanel>
+        Не удалось загрузить события: {{ catalogError }}
+      </div>
 
+      <!-- Empty -->
       <ExperienceStatePanel
-        v-else-if="isEmpty"
-        :title="mockStateLabels.empty.title"
-        :description="mockStateLabels.empty.description"
-        hint="state=empty"
-      >
-        <template #actions>
-          <NuxtLink
-            to="/event"
-            class="rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition hover:bg-zinc-200"
-          >Вернуть афишу</NuxtLink>
-        </template>
-      </ExperienceStatePanel>
+        v-else-if="!zones.length"
+        title="Пока ничего не запланировано"
+        description="Следи за обновлениями — скоро появятся новые события."
+        hint="empty"
+      />
 
       <template v-else>
-        <div
-          v-if="isError"
-          data-testid="event-error-mode"
-          class="rounded-[0.9rem] border border-orange-300/35 bg-orange-500/12 px-5 py-4 text-sm text-orange-100 shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
-        >
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="text-[11px] font-bold uppercase tracking-[0.35em] text-orange-100/70">
-                state=error
-              </p>
-              <p class="mt-2 leading-7">
-                {{ mockStateLabels.error.description }} В этом режиме submit намеренно падает, чтобы проверить failure-path прямо внутри event flow.
-              </p>
-            </div>
+        <div data-testid="event-client-ready" class="hidden" />
+        <!-- Event cards — browser-style category tabs -->
+        <div>
+          <!-- Format filter tabs -->
+          <div class="flex gap-1 overflow-x-auto rounded-t-[0.6rem] border border-b-0 border-fuchsia-400/15 bg-[#07141d] px-2 pt-2">
             <button
               type="button"
-              class="rounded-[0.7rem] border border-white/15 px-4 py-2 text-sm font-bold text-white transition hover:border-white/30"
-              @click="clearTransientStates"
+              class="flex-shrink-0 rounded-t-[0.5rem] px-4 py-2 text-xs font-bold transition-all"
+              :class="selectedFormat === ''
+                ? 'bg-[#091924] text-white border border-b-0 border-fuchsia-400/25 -mb-px'
+                : 'text-fuchsia-100/40 hover:text-fuchsia-100/70'"
+              @click="selectedFormat = ''"
             >
-              Вернуть default-state
+              Все
+            </button>
+            <button
+              v-for="fmt in availableFormats"
+              :key="fmt"
+              type="button"
+              class="flex-shrink-0 rounded-t-[0.5rem] px-4 py-2 text-xs font-bold transition-all"
+              :class="selectedFormat === fmt
+                ? 'bg-[#091924] text-white border border-b-0 border-fuchsia-400/25 -mb-px'
+                : 'text-fuchsia-100/40 hover:text-fuchsia-100/70'"
+              @click="selectedFormat = fmt"
+            >
+              {{ fmt }}
             </button>
           </div>
+          <div class="rounded-b-[0.6rem] rounded-tr-[0.6rem] border border-fuchsia-400/15 bg-[#091924] p-0.5" />
         </div>
 
+        <!-- Events grid -->
         <section class="grid gap-6 lg:grid-cols-3">
           <ExperienceCard
-            v-for="event in visibleEvents"
-            :key="event.id"
-            eyebrow="Event slot"
-            :title="event.title"
-            :description="event.description"
-            :details="[`${event.dateLabel} • ${event.timeLabel}`, event.format, ...(event.speakers ?? [])]"
-            :badge="event.soldOut ? 'Sold out' : `${event.remaining} мест`"
-            :badge-tone="event.soldOut ? 'warning' : 'success'"
-            footer-label="Формат"
-            :footer-value="event.format"
-            :accent="event.accent"
+            v-for="zone in filteredZones"
+            :key="zone.id"
+            eyebrow="Event"
+            :title="zone.name"
+            :description="zone.description"
+            :details="eventDetails(zone)"
+            :badge="zone.capacity > 0 ? `${zone.capacity} мест` : '—'"
+            badge-tone="success"
+            footer-label="Вместимость"
+            :footer-value="String(zone.capacity)"
+            accent="#f472b6"
           >
             <template #cta>
               <button
-                :data-testid="`event-card-${event.id}`"
+                :data-testid="`event-card-${zone.id}`"
                 class="rounded-full px-5 py-2 text-sm font-bold transition"
-                :class="selectedEventId === event.id ? 'bg-white text-black' : 'border border-white/15 bg-white/5 text-white hover:border-white/30'"
-                :disabled="Boolean(event.soldOut)"
-                @click="selectEvent(event.id)"
+                :class="selectedZoneId === zone.id
+                  ? 'bg-white text-black'
+                  : 'border border-white/15 bg-white/5 text-white hover:border-white/30'"
+                @click="selectZone(zone.id)"
               >
-                {{ selectedEventId === event.id ? 'Выбрано' : event.soldOut ? 'Закрыто' : 'Участвовать' }}
+                {{ selectedZoneId === zone.id ? 'Выбрано' : 'Участвовать' }}
               </button>
             </template>
           </ExperienceCard>
         </section>
 
+        <!-- Registration flow -->
         <ExperienceFlowPanel
           eyebrow="Registration flow"
           title="Регистрация на событие"
-          description="Тот же продуктовый ритм: статус выбранного события, форма участника, блокировка sold-out, pending во время mock-submit и явный success/error output."
+          description="Выбери событие и подтверди участие — место фиксируется автоматически на твой аккаунт."
         >
           <div class="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div class="space-y-6">
+
+              <!-- Selected event card -->
               <div
                 data-testid="event-selected-card"
                 class="rounded-[0.85rem] border border-fuchsia-400/20 bg-[#09131d] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               >
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">
-                      Выбранное событие
-                    </p>
-                    <h3 class="mt-2 text-2xl font-black text-white">
-                      {{ selectedEvent?.title ?? 'Сначала выбери event' }}
-                    </h3>
-                    <p class="mt-2 text-sm leading-7 text-zinc-300">
-                      {{ selectedEvent?.description ?? 'Нужен один доступный event из афиши выше.' }}
-                    </p>
+                    <p class="text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Выбранное событие</p>
+                    <h3 class="mt-2 text-2xl font-black text-white">{{ selectedZone?.name ?? 'Сначала выбери событие' }}</h3>
+                    <p class="mt-2 text-sm leading-7 text-zinc-300">{{ selectedZone?.description ?? 'Нажми «Участвовать» на одной из карточек выше.' }}</p>
                   </div>
                   <div
-                    v-if="selectedEvent"
+                    v-if="selectedZone"
                     class="rounded-[0.7rem] border border-fuchsia-300/25 bg-[#081019] px-4 py-3 text-right"
                   >
-                    <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-100/45">
-                      Осталось мест
-                    </p>
-                    <p class="mt-2 text-2xl font-black text-white">
-                      {{ selectedEvent.remaining }}/{{ selectedEvent.capacity }}
-                    </p>
+                    <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-100/45">Вместимость</p>
+                    <p class="mt-2 text-2xl font-black text-white">{{ selectedZone.capacity }}</p>
                   </div>
                 </div>
               </div>
 
-              <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Имя</label>
-                  <input
-                    v-model="attendeeName"
-                    data-testid="event-attendee-name"
-                    type="text"
-                    placeholder="Например, Anna"
-                    class="w-full rounded-[0.7rem] border border-fuchsia-400/20 bg-[#06131c] px-4 py-3.5 text-white placeholder:text-fuchsia-200/25 focus:border-fuchsia-300 focus:outline-none"
-                  >
-                </div>
-                <div>
-                  <label class="mb-3 block text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Email</label>
-                  <input
-                    v-model="attendeeEmail"
-                    data-testid="event-attendee-email"
-                    type="email"
-                    placeholder="anna@example.com"
-                    class="w-full rounded-[0.7rem] border border-fuchsia-400/20 bg-[#06131c] px-4 py-3.5 text-white placeholder:text-fuchsia-200/25 focus:border-fuchsia-300 focus:outline-none"
-                  >
-                </div>
-              </div>
-
-              <div>
-                <p class="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">
-                  Формат участия
-                </p>
+              <!-- Service selector (ticket type) -->
+              <div v-if="selectedZone && selectedZone.services.length > 0">
+                <p class="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Тип билета</p>
                 <div class="flex flex-wrap gap-2">
                   <button
-                    v-for="option in eventGuestOptions"
-                    :key="option.id"
-                    :data-testid="`event-attendance-${option.id}`"
+                    v-for="svc in selectedZone.services"
+                    :key="svc.id"
                     type="button"
                     class="rounded-[0.55rem] border px-4 py-2 text-sm font-bold transition"
-                    :class="attendanceMode === option.id ? 'border-fuchsia-200 bg-fuchsia-300 text-[#020c13] shadow-[0_0_24px_rgba(244,114,182,0.25)]' : 'border-fuchsia-400/20 bg-[#07141d] text-white hover:border-fuchsia-300/45'"
-                    @click="attendanceMode = option.id"
+                    :class="selectedServiceId === svc.id
+                      ? 'border-fuchsia-200 bg-fuchsia-300 text-[#020c13] shadow-[0_0_24px_rgba(244,114,182,0.25)]'
+                      : 'border-fuchsia-400/20 bg-[#07141d] text-white hover:border-fuchsia-300/45'"
+                    @click="selectedServiceId = svc.id"
                   >
-                    {{ option.label }}
+                    {{ svc.name }}
+                    <span class="ml-1.5 text-[10px] opacity-60">{{ svc.price }} ₽</span>
                   </button>
                 </div>
               </div>
+
+              <!-- Auth notice / user drawer trigger -->
+              <div v-if="!authStore.isAuthenticated" class="rounded-[0.85rem] border border-amber-300/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">
+                <p class="font-bold">Требуется вход</p>
+                <p class="mt-1 text-amber-100/70">Войди через Google для регистрации на событие. Данные профиля подтянутся автоматически.</p>
+              </div>
+              <button
+                v-else
+                type="button"
+                class="flex w-full items-center gap-4 rounded-[0.85rem] border border-fuchsia-400/15 bg-[#07141d] px-5 py-4 text-left transition hover:border-fuchsia-300/30"
+                @click="drawerOpen = true"
+              >
+                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-fuchsia-400/15 text-sm font-black text-fuchsia-200">
+                  {{ authStore.user?.name?.charAt(0).toUpperCase() ?? '?' }}
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-bold text-white">{{ authStore.user?.name }}</p>
+                  <p class="truncate text-xs text-fuchsia-100/50">{{ authStore.user?.email }} · Нажми чтобы просмотреть</p>
+                </div>
+              </button>
             </div>
 
+            <!-- Summary sidebar -->
             <div class="space-y-4 rounded-[0.85rem] border border-fuchsia-400/18 bg-[#09131d] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <div>
-                <p class="text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">
-                  Регистрация
-                </p>
-                <h3 class="mt-2 text-2xl font-black uppercase tracking-[-0.04em] text-white">
-                  Участие подтверждается локально
-                </h3>
+                <p class="text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Регистрация</p>
+                <h3 class="mt-2 text-2xl font-black uppercase tracking-[-0.04em] text-white">Участие</h3>
               </div>
 
               <div class="space-y-3 text-sm text-zinc-300">
                 <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
                   <span>Событие</span>
-                  <span class="font-bold text-white">{{ selectedEvent?.title ?? '—' }}</span>
+                  <span class="font-bold text-white">{{ selectedZone?.name ?? '—' }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
-                  <span>Формат</span>
-                  <span class="font-bold text-white">{{ selectedAttendanceLabel }}</span>
+                  <span>Тариф</span>
+                  <span class="font-bold text-white">{{ selectedServiceLabel }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
-                  <span>Дата</span>
-                  <span class="font-bold text-white">{{ selectedEvent ? `${selectedEvent.dateLabel} • ${selectedEvent.timeLabel}` : '—' }}</span>
+                  <span>Гость</span>
+                  <span class="font-bold text-white">{{ authStore.user?.name ?? '—' }}</span>
                 </div>
               </div>
 
@@ -228,14 +209,14 @@
                 data-testid="event-success-message"
                 class="rounded-[0.7rem] border border-emerald-300/35 bg-emerald-500/18 px-4 py-3 text-sm text-emerald-100"
               >
-                Регистрация готова. Твоё место на {{ selectedEvent?.title ?? 'выбранный event' }} удержано в mock-режиме.
+                Регистрация подтверждена. Твоё место на «{{ selectedZone?.name }}» зафиксировано.
               </div>
 
               <button
                 data-testid="event-submit"
                 type="button"
                 class="w-full rounded-[0.75rem] bg-fuchsia-300 px-5 py-4 text-sm font-black uppercase tracking-[0.25em] text-[#020c13] transition hover:bg-fuchsia-200 hover:shadow-[0_0_28px_rgba(244,114,182,0.28)] disabled:cursor-not-allowed disabled:bg-fuchsia-300/40"
-                :disabled="pending"
+                :disabled="pending || !authStore.isAuthenticated"
                 @click="submitRegistration"
               >
                 {{ pending ? 'Фиксируем...' : 'Подтвердить участие' }}
@@ -254,109 +235,215 @@
         </ExperienceFlowPanel>
       </template>
     </div>
+
+    <!-- User Drawer -->
+    <Teleport to="body">
+      <Transition name="drawer">
+        <div
+          v-if="drawerOpen"
+          class="fixed inset-0 z-50 flex justify-end"
+        >
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="drawerOpen = false" />
+          <div class="relative z-10 flex h-full w-full max-w-sm flex-col bg-[#050f17] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-white/8 px-6 py-5">
+              <p class="text-xs font-black uppercase tracking-[0.3em] text-fuchsia-100/50">Профиль участника</p>
+              <button
+                type="button"
+                class="rounded-full border border-white/10 p-2 text-zinc-400 transition hover:border-white/25 hover:text-white"
+                @click="drawerOpen = false"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-8">
+              <div class="flex flex-col items-center text-center">
+                <div class="flex h-20 w-20 items-center justify-center rounded-full border-2 border-fuchsia-300/30 bg-fuchsia-400/10 text-3xl font-black text-fuchsia-200">
+                  {{ authStore.user?.name?.charAt(0).toUpperCase() ?? '?' }}
+                </div>
+                <h2 class="mt-5 text-xl font-black text-white">{{ authStore.user?.name }}</h2>
+                <p class="mt-1 text-sm text-fuchsia-100/50">{{ authStore.user?.email }}</p>
+                <span class="mt-3 rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-100">
+                  {{ authStore.user?.role }}
+                </span>
+              </div>
+              <div class="mt-8 space-y-3 text-sm">
+                <div class="rounded-[0.8rem] border border-white/8 bg-white/4 px-4 py-3">
+                  <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Имя участника</p>
+                  <p class="mt-1 font-medium text-white">{{ authStore.user?.name ?? '—' }}</p>
+                </div>
+                <div class="rounded-[0.8rem] border border-white/8 bg-white/4 px-4 py-3">
+                  <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Email</p>
+                  <p class="mt-1 font-medium text-white">{{ authStore.user?.email ?? '—' }}</p>
+                </div>
+              </div>
+              <p class="mt-6 text-center text-[11px] text-zinc-600">
+                Данные профиля автоматически прикрепятся к регистрации.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { EventItem } from '../utils/experienceData'
-import { eventGuestOptions, eventItems, mockStateLabels } from '../utils/experienceData'
+import type { CatalogZoneWithServices } from '../api/types'
+import { getEventCatalog } from '../api/catalog'
+import { createSessionBooking } from '../api/booking'
+import { useAuthStore } from '../stores/auth'
 
-const route = useRoute()
-const router = useRouter()
-const { uiState, isLoading, isEmpty, isError, isSuccessPreview } = useExperienceMockState(route)
-const { pending, submit } = useMockSubmission()
+useHead({ title: 'Events - PlayGround' })
 
-useHead({
-  title: 'Event Zone - PlayGround'
-})
+const authStore = useAuthStore()
 
-const heroStats = [
-  { label: 'Events', value: `${eventItems.length}`, hint: 'в текущей mock-афише' },
-  { label: 'Next drop', value: '19:30', hint: 'вечерний прайм' },
-  { label: 'Access', value: 'Public', hint: 'без auth-gating' }
-]
+// ── State ────────────────────────────────────────────────
+const zones = ref<CatalogZoneWithServices[]>([])
+const catalogLoading = ref(true)
+const catalogError = ref('')
 
-const selectedEventId = ref<string>(eventItems.find(event => !event.soldOut)?.id ?? eventItems[0]?.id ?? '')
-const attendeeName = ref('')
-const attendeeEmail = ref('')
-const attendanceMode = ref('')
-const isClientReady = ref(false)
+const selectedZoneId = ref<number | null>(null)
+const selectedServiceId = ref<number | null>(null)
+const selectedFormat = ref('')
+
+const drawerOpen = ref(false)
+const pending = ref(false)
 const registrationSuccess = ref(false)
 const submitError = ref('')
 const validationMessage = ref('')
 
-const visibleEvents = computed(() => (uiState.value === 'empty' ? [] : eventItems))
-const selectedEvent = computed<EventItem | undefined>(() => eventItems.find(event => event.id === selectedEventId.value))
-const selectedAttendanceLabel = computed(() => eventGuestOptions.find(option => option.id === attendanceMode.value)?.label ?? '—')
+// ── Computed ──────────────────────────────────────────────
+const heroStats = computed(() => [
+  { label: 'Events', value: String(zones.value.length), hint: 'в текущей афише' },
+  { label: 'Регистрация', value: 'Бесплатно', hint: 'без скрытых условий' },
+  { label: 'Доступ', value: 'Для всех', hint: 'по аккаунту' }
+])
 
-onMounted(() => {
-  isClientReady.value = true
+const availableFormats = computed(() => {
+  const fmts = new Set<string>()
+  for (const z of zones.value) {
+    const d = z.details_json as any
+    if (d?.format) fmts.add(d.format)
+  }
+  return Array.from(fmts)
 })
 
-function selectEvent(eventId: string) {
-  selectedEventId.value = eventId
-  registrationSuccess.value = false
-  submitError.value = ''
-  validationMessage.value = ''
-}
+const filteredZones = computed(() =>
+  selectedFormat.value
+    ? zones.value.filter(z => (z.details_json as any)?.format === selectedFormat.value)
+    : zones.value
+)
 
-function clearTransientStates() {
-  submitError.value = ''
-  registrationSuccess.value = false
-  validationMessage.value = ''
-  if (route.query.state) {
-    void router.push({ query: {} })
+const selectedZone = computed(() =>
+  zones.value.find(z => z.id === selectedZoneId.value) ?? null
+)
+
+const selectedServiceLabel = computed(() => {
+  if (!selectedServiceId.value || !selectedZone.value) return '—'
+  const svc = selectedZone.value.services.find(s => s.id === selectedServiceId.value)
+  return svc ? `${svc.name} · ${svc.price} ₽` : '—'
+})
+
+// ── Lifecycle ─────────────────────────────────────────────
+onMounted(async () => {
+  try {
+    const data = await getEventCatalog()
+    zones.value = data.zones ?? []
+    if (zones.value.length > 0) {
+      selectedZoneId.value = zones.value[0]!.id
+      selectedServiceId.value = zones.value[0]!.services?.[0]?.id ?? null
+    }
+  } catch (e: any) {
+    catalogError.value = e?.message ?? 'Неизвестная ошибка'
+  } finally {
+    catalogLoading.value = false
   }
+})
+
+// ── Methods ───────────────────────────────────────────────
+function selectZone(id: number) {
+  selectedZoneId.value = id
+  const zone = zones.value.find(z => z.id === id)
+  selectedServiceId.value = zone?.services?.[0]?.id ?? null
+  registrationSuccess.value = false
+  submitError.value = ''
+  validationMessage.value = ''
 }
 
 function resetForm() {
-  attendeeName.value = ''
-  attendeeEmail.value = ''
-  attendanceMode.value = ''
+  selectedZoneId.value = null
+  selectedServiceId.value = null
   registrationSuccess.value = false
   submitError.value = ''
   validationMessage.value = ''
 }
 
-function validateRegistration() {
-  if (!selectedEvent.value) {
-    return 'Сначала выбери событие из афиши.'
-  }
-
-  if (selectedEvent.value.soldOut || selectedEvent.value.remaining === 0) {
-    return 'На это событие мест больше нет. Выбери другой event.'
-  }
-
-  if (!attendeeName.value.trim()) {
-    return 'Укажи имя участника.'
-  }
-
-  if (!attendeeEmail.value.trim() || !attendeeEmail.value.includes('@')) {
-    return 'Нужен валидный email для mock-подтверждения.'
-  }
-
-  if (!attendanceMode.value) {
-    return 'Выбери формат участия.'
-  }
-
+function validate(): string {
+  if (!selectedZone.value) return 'Сначала выбери событие из афиши.'
+  if (!selectedServiceId.value) return 'Выбери тип билета.'
+  if (!authStore.isAuthenticated) return 'Для регистрации необходимо войти в аккаунт.'
   return ''
 }
 
 async function submitRegistration() {
-  validationMessage.value = validateRegistration()
+  validationMessage.value = validate()
   submitError.value = ''
+  registrationSuccess.value = false
+  if (validationMessage.value) return
 
-  if (validationMessage.value) {
-    registrationSuccess.value = false
-    return
-  }
+  const zone = selectedZone.value!
+  const service = zone.services.find(s => s.id === selectedServiceId.value)
+  const duration = service?.duration ?? 60
 
-  await submit(() => {
-    registrationSuccess.value = true
-  }, uiState.value === 'error')
-    .catch(() => {
-      submitError.value = 'Симуляция ошибки: регистрация не сохранилась. Повтори попытку или сбрось query-state.'
-      registrationSuccess.value = false
+  // For events the start/end time comes from the event details_json or we use a placeholder
+  const d = zone.details_json as any
+  const startTime = d?.start_time ?? new Date().toISOString()
+  const endTime = d?.end_time ?? new Date(Date.now() + duration * 60000).toISOString()
+
+  pending.value = true
+  try {
+    await createSessionBooking({
+      zone_id: zone.id,
+      service_id: service?.id || 0,
+      start_time: startTime,
+      end_time: endTime,
+      participants: 1,
+      status: 'created'
     })
+    registrationSuccess.value = true
+  } catch (e: any) {
+    submitError.value = e?.data?.error?.message ?? e?.message ?? 'Не удалось зарегистрироваться. Попробуй ещё раз.'
+  } finally {
+    pending.value = false
+  }
+}
+
+function eventDetails(zone: CatalogZoneWithServices): string[] {
+  const d = zone.details_json as any
+  const parts: string[] = []
+  if (d?.date) parts.push(d.date)
+  if (d?.format) parts.push(d.format)
+  if (Array.isArray(d?.speakers)) parts.push(...d.speakers)
+  if (!parts.length && zone.services?.length) {
+    parts.push(...zone.services.map(s => s.name + ' · ' + s.price + ' ₽'))
+  }
+  return parts
 }
 </script>
+
+<style scoped>
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.25s ease;
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+.drawer-enter-from .relative,
+.drawer-leave-to .relative {
+  transform: translateX(100%);
+}
+</style>

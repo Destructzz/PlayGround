@@ -81,6 +81,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	publicScope := api.Group("/public")
 	publicScope.GET("/home", public.Home)
 	publicScope.GET("/lounge", public.Lounge)
+	publicScope.GET("/lounge/:id/availability", public.LoungeAvailability)
 	publicScope.GET("/event", public.Event)
 	publicScope.GET("/gaming", public.Gaming)
 	publicScope.GET("/gaming/availability", public.GamingAvailability)
