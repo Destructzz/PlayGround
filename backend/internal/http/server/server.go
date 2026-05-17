@@ -58,6 +58,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	place := handlers.NewPlace(placeService)
 	publicService := service.NewPublicService(queries)
 	public := handlers.NewPublic(publicService)
+	siteSettingsService := service.NewSiteSettings(queries)
+	siteSettings := handlers.NewSiteSettings(siteSettingsService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -159,6 +161,11 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	shiftScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Create)
 	shiftScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Delete)
 	shiftScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), shift.Patch)
+
+	// Settings CRUD
+	settingsScope := api.Group("/settings")
+	settingsScope.GET("", siteSettings.Get)
+	settingsScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), siteSettings.Upsert)
 
 	return r
 }

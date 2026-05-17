@@ -149,9 +149,32 @@ func (s *PublicService) EventCatalog(ctx context.Context) ([]PublicCatalogZoneWi
 }
 
 func (s *PublicService) GamingCatalog(ctx context.Context) (GamingCatalog, error) {
-	zoneTags, err := s.queries.ListUserZoneTags(ctx)
+	var displayedTagIDs []int32
+	settings, err := s.queries.GetSiteSettings(ctx)
+	if err == nil && len(settings.SettingsJson) > 0 {
+		_ = json.Unmarshal(settings.SettingsJson, &displayedTagIDs)
+	}
+
+	allTags, err := s.queries.ListZoneTags(ctx)
 	if err != nil {
 		return GamingCatalog{}, err
+	}
+
+	var zoneTags []sqlc.ZoneTag
+	if len(displayedTagIDs) > 0 {
+		tagMap := make(map[int32]sqlc.ZoneTag, len(allTags))
+		for _, tag := range allTags {
+			tagMap[int32(tag.ID)] = tag
+		}
+		for _, id := range displayedTagIDs {
+			if tag, ok := tagMap[id]; ok {
+				zoneTags = append(zoneTags, tag)
+			}
+		}
+	} else {
+		for i := 0; i < len(allTags) && i < 3; i++ {
+			zoneTags = append(zoneTags, allTags[i])
+		}
 	}
 
 	tagOrder := make(map[int32]int, len(zoneTags))

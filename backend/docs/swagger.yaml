@@ -354,6 +354,8 @@ definitions:
       zone_id:
         type: integer
     type: object
+  domain.UpdateSiteSettingsRequest:
+    type: object
   response.BookingDoc:
     properties:
       created_at:
@@ -2021,6 +2023,54 @@ paths:
       summary: Patch service
       tags:
       - services
+  /api/v1/settings:
+    get:
+      description: Returns the global site configuration settings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get site settings
+      tags:
+      - settings
+    post:
+      consumes:
+      - application/json
+      description: Creates or updates the global site configuration settings
+      parameters:
+      - description: Settings payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateSiteSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update site settings
+      tags:
+      - settings
   /api/v1/shift:
     get:
       description: Returns all shifts with creator user data

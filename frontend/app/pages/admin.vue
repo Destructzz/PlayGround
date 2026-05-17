@@ -132,7 +132,8 @@ const adminTabs = [
   { id: 'bookings', label: 'Бронирования', icon: '📅' },
   { id: 'shifts', label: 'Смены', icon: '⏳' },
   { id: 'lounge', label: 'Lounge зоны', icon: '🛋️' },
-  { id: 'event', label: 'События', icon: '🎪' }
+  { id: 'event', label: 'События', icon: '🎪' },
+  { id: 'settings', label: 'Настройки', icon: '⚙️' }
 ] as const
 
 type TabId = typeof adminTabs[number]['id']
@@ -140,6 +141,7 @@ type TabId = typeof adminTabs[number]['id']
 const activeTab = computed<TabId>(() => {
   if (route.path.endsWith('/lounge')) return 'lounge'
   if (route.path.endsWith('/event')) return 'event'
+  if (route.path.endsWith('/settings')) return 'settings'
   return (route.query.tab as TabId) || 'zones'
 })
 
@@ -148,6 +150,8 @@ function selectTab(tabId: TabId) {
     router.push('/admin/lounge')
   } else if (tabId === 'event') {
     router.push('/admin/event')
+  } else if (tabId === 'settings') {
+    router.push('/admin/settings')
   } else {
     router.push({ path: '/admin', query: { tab: tabId } })
   }

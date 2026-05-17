@@ -4,6 +4,7 @@ import (
 	"backend/internal/domain"
 	"backend/internal/repo/sqlc"
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -29,7 +30,39 @@ func (s *ZoneTagService) GetByID(ctx context.Context, id int32) (sqlc.ZoneTag, e
 }
 
 func (s *ZoneTagService) Delete(ctx context.Context, id int32) (int64, error) {
-	return s.queries.DeleteZoneTag(ctx, id)
+	rows, err := s.queries.DeleteZoneTag(ctx, id)
+	if err != nil {
+		return rows, err
+	}
+
+	if settings, getErr := s.queries.GetSiteSettings(ctx); getErr == nil {
+		var activeIDs []int32
+		if len(settings.SettingsJson) > 0 {
+			if unmarshalErr := json.Unmarshal(settings.SettingsJson, &activeIDs); unmarshalErr == nil {
+				var filteredIDs []int32
+				modified := false
+				for _, activeID := range activeIDs {
+					if activeID != id {
+						filteredIDs = append(filteredIDs, activeID)
+					} else {
+						modified = true
+					}
+				}
+
+				if modified {
+					newJSON, marshalErr := json.Marshal(filteredIDs)
+					if marshalErr == nil {
+						_, _ = s.queries.UpsertSiteSettings(ctx, sqlc.UpsertSiteSettingsParams{
+							SettingsJson:     newJSON,
+							GalleryItemsJson: settings.GalleryItemsJson,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rows, nil
 }
 
 func (s *ZoneTagService) Patch(ctx context.Context, id int32, dto domain.PatchZoneTagRequest) (sqlc.ZoneTag, error) {

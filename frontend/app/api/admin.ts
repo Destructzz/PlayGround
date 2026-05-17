@@ -176,3 +176,15 @@ export function deleteAdminService(id: number) {
   })
 }
 
+export function getAdminSiteSettings() {
+  return apiFetch<{ settings: { id: number; settings_json: number[]; gallery_items_json: any[] } }>('/api/v1/settings', withAuth)
+}
+
+export function updateAdminSiteSettings(payload: { settings_json: number[]; gallery_items_json?: any[] }) {
+  return apiFetch<{ settings: { id: number; settings_json: number[]; gallery_items_json: any[] } }>('/api/v1/settings', {
+    ...withAuth,
+    method: 'POST',
+    body: payload
+  })
+}
+
