@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: playground-postgres
+    container_name: playground-postgres-prod
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata-prod:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
@@ -21,12 +21,14 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    container_name: playground-backend-prod
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      APP_ENV: ${APP_ENV}
-      APP_HTTP_ADDR: ${APP_HTTP_ADDR}
+      APP_ENV: production
+      APP_HTTP_ADDR: :8080
       APP_DB_DSN: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -35,16 +37,34 @@ services:
     ports:
       - "8080:8080"
 
-  caddy:
-    image: caddy:2-alpine
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: playground-frontend-prod
+    restart: unless-stopped
     depends_on:
       - backend
-    network_mode: host
     environment:
-      CADDY_BACKEND_UPSTREAM: ${CADDY_BACKEND_UPSTREAM}
-      CADDY_FRONTEND_UPSTREAM: ${CADDY_FRONTEND_UPSTREAM}
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: playground-caddy-prod
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+    environment:
+      CADDY_BACKEND_UPSTREAM: backend:8080
+      CADDY_FRONTEND_UPSTREAM: frontend:3000
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
 
 volumes:
-  pgdata:
+  pgdata-prod:

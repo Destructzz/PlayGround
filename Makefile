@@ -32,13 +32,15 @@ migrate-down:
 	@echo "Running migrations down..."
 	migrate -path $(MIGRATIONS_PATH) -database "$$DATABASE_URL" -verbose down
 
+COMPOSE_FILE ?= docker-compose.yml
+
 db-url:
 	@echo $$DATABASE_URL
 
 backup-export:
 	@echo "Exporting database backup..."
 	@mkdir -p backup
-	docker exec -t playground-postgres pg_dump -c --if-exists -U $(POSTGRES_USER) -d $(POSTGRES_DB) > backup/backup_$$(date +%Y%m%d_%H%M%S).sql
+	docker compose -f $(COMPOSE_FILE) exec -T postgres pg_dump -c --if-exists -U $(POSTGRES_USER) -d $(POSTGRES_DB) > backup/backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "✅ Backup exported successfully to backup/ folder"
 
 backup-import:
@@ -51,5 +53,5 @@ backup-import:
 		exit 1; \
 	fi
 	@echo "Importing database backup from backup/$(FILENAME)..."
-	docker exec -i playground-postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) < backup/$(FILENAME)
+	docker compose -f $(COMPOSE_FILE) exec -T postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) < backup/$(FILENAME)
 	@echo "✅ Backup imported successfully from backup/$(FILENAME)"
