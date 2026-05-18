@@ -5,7 +5,6 @@
         eyebrow="Lounge zone"
         title="Приватный отдых без потери ритма"
         description="Выбери зону, дату и часовой слот — мы оставим место для твоей компании."
-        :stats="heroStats"
       />
 
       <!-- Loading state -->
@@ -19,7 +18,7 @@
       <!-- Error state -->
       <div
         v-else-if="catalogError"
-        class="rounded-[0.9rem] border border-orange-300/35 bg-orange-500/12 px-5 py-4 text-sm text-orange-100"
+        class="rounded-lg border border-orange-500/30 bg-orange-500/10 px-5 py-4 text-xs text-orange-200"
       >
         Не удалось загрузить зоны: {{ catalogError }}
       </div>
@@ -43,10 +42,10 @@
             <template #cta>
               <button
                 :data-testid="`lounge-zone-${zone.id}`"
-                class="rounded-full px-5 py-2 text-sm font-bold transition"
+                class="rounded-lg px-4 py-2 text-xs font-bold transition"
                 :class="selectedZoneId === zone.id
-                  ? 'bg-white text-black'
-                  : 'border border-white/15 bg-white/5 text-white hover:border-white/30'"
+                  ? 'bg-cyan-400 text-black shadow-[0_0_12px_rgba(34,211,238,0.2)] hover:bg-cyan-300'
+                  : 'border border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10'"
                 @click="selectZone(zone.id)"
               >
                 {{ selectedZoneId === zone.id ? 'Выбрано' : 'Выбрать' }}
@@ -60,30 +59,31 @@
           eyebrow="Booking flow"
           title="Забронировать lounge"
           description="Выбери дату и доступный слот — место зафиксируется за твоей компанией."
+          accent="#22d3ee"
         >
           <div class="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div class="space-y-6">
 
               <!-- Selected zone summary -->
               <div>
-                <p class="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Выбранная зона</p>
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Выбранная зона</p>
                 <div
                   data-testid="lounge-selected-zone"
-                  class="rounded-[0.85rem] border border-cyan-400/20 bg-[#091924] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                  class="rounded-xl border border-white/10 bg-[#071724]/75 backdrop-blur-md p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
                 >
                   <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 class="text-2xl font-black text-white">{{ selectedZone?.name ?? 'Ничего не выбрано' }}</h3>
-                      <p class="mt-2 text-sm leading-7 text-zinc-300">
+                      <h3 class="text-xl font-black text-white uppercase">{{ selectedZone?.name ?? 'Ничего не выбрано' }}</h3>
+                      <p class="mt-2 text-xs leading-relaxed text-zinc-300">
                         {{ selectedZone?.description ?? 'Сначала выбери lounge-зону из каталога выше.' }}
                       </p>
                     </div>
                     <div
                       v-if="selectedZone"
-                      class="rounded-[0.7rem] border border-cyan-300/25 bg-[#061018] px-4 py-3 text-right"
+                      class="rounded-lg border border-white/10 bg-[#020a10] px-4 py-3 text-right"
                     >
-                      <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-100/45">Вместимость</p>
-                      <p class="mt-2 text-2xl font-black text-white">{{ selectedZone.capacity }}</p>
+                      <p class="text-[9px] uppercase tracking-[0.25em] text-zinc-500">Вместимость</p>
+                      <p class="mt-1 text-xl font-black text-white">{{ selectedZone.capacity }}</p>
                     </div>
                   </div>
                 </div>
@@ -91,42 +91,42 @@
 
               <!-- Date selector — sticky browser-style tabs -->
               <div v-if="selectedZone">
-                <p class="mb-2 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Дата</p>
-                <div class="flex gap-1 overflow-x-auto rounded-t-[0.6rem] border border-b-0 border-cyan-400/15 bg-[#07141d] px-2 pt-2">
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Дата</p>
+                <div class="flex gap-1 overflow-x-auto rounded-t-lg border border-b-0 border-white/10 bg-[#020a10] px-2 pt-2">
                   <button
                     v-for="d in availableDates"
                     :key="d.value"
                     type="button"
-                    class="flex-shrink-0 rounded-t-[0.5rem] px-4 py-2 text-xs font-bold transition-all"
+                    class="flex-shrink-0 rounded-t-md px-4 py-2 text-xs font-bold transition-all"
                     :class="selectedDate === d.value
-                      ? 'bg-[#091924] text-white border border-b-0 border-cyan-400/25 -mb-px'
-                      : 'text-cyan-100/40 hover:text-cyan-100/70'"
+                      ? 'bg-[#071724]/75 text-white border border-b-0 border-white/20 -mb-px'
+                      : 'text-zinc-400 hover:text-zinc-200'"
                     @click="selectDate(d.value)"
                   >
                     {{ d.label }}
                   </button>
                 </div>
-                <div class="rounded-b-[0.85rem] border border-cyan-400/15 bg-[#091924] p-4">
-                  <p class="text-[11px] text-cyan-100/40">{{ selectedDate }}</p>
+                <div class="rounded-b-xl border border-white/10 bg-[#071724]/75 p-4">
+                  <p class="text-[10px] uppercase tracking-wider text-zinc-500">{{ selectedDate }}</p>
                 </div>
               </div>
 
               <!-- Hourly slots -->
               <div v-if="selectedZone && selectedDate">
-                <p class="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Часовой слот</p>
-                <div v-if="availabilityLoading" class="text-sm text-zinc-400">Загружаем слоты...</div>
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Часовой слот</p>
+                <div v-if="availabilityLoading" class="text-xs text-zinc-400">Загружаем слоты...</div>
                 <div v-else class="flex flex-wrap gap-2">
                   <button
                     v-for="slot in slots"
                     :key="slot.hour"
                     :data-testid="`lounge-slot-${slot.hour}`"
                     type="button"
-                    class="rounded-[0.55rem] border px-4 py-2 text-sm font-bold transition"
+                    class="rounded-lg border px-4 py-2 text-xs font-bold transition"
                     :class="selectedHour === slot.hour
-                      ? 'border-cyan-200 bg-cyan-300 text-[#020c13] shadow-[0_0_24px_rgba(34,211,238,0.25)]'
+                      ? 'border-cyan-400 bg-cyan-400 text-black shadow-[0_0_16px_rgba(34,211,238,0.15)]'
                       : !slot.available
-                        ? 'cursor-not-allowed border-white/5 bg-white/5 text-zinc-500'
-                        : 'border-cyan-400/20 bg-[#07141d] text-white hover:border-cyan-300/45'"
+                        ? 'cursor-not-allowed border-white/10 bg-white/5 text-zinc-600'
+                        : 'border-white/10 bg-[#020a10] text-zinc-300 hover:border-cyan-400/30 hover:text-white'"
                     :disabled="!slot.available"
                     @click="selectedHour = slot.hour"
                   >
@@ -138,19 +138,19 @@
 
               <!-- Party size -->
               <div v-if="selectedZone">
-                <p class="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Размер компании</p>
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Размер компании</p>
                 <div class="flex flex-wrap gap-2">
                   <button
                     v-for="n in partySizeOptions"
                     :key="n"
                     :data-testid="`lounge-party-${n}`"
                     type="button"
-                    class="rounded-[0.55rem] border px-4 py-2 text-sm font-bold transition"
+                    class="rounded-lg border px-4 py-2 text-xs font-bold transition"
                     :class="partySize === n
-                      ? 'border-cyan-200 bg-cyan-300 text-[#020c13]'
+                      ? 'border-cyan-400 bg-cyan-400 text-black'
                       : n > selectedSlotRemaining
-                        ? 'cursor-not-allowed border-white/5 bg-white/5 text-zinc-500'
-                        : 'border-cyan-400/20 bg-[#07141d] text-white hover:border-cyan-300/45'"
+                        ? 'cursor-not-allowed border-white/10 bg-white/5 text-zinc-600'
+                        : 'border-white/10 bg-[#020a10] text-zinc-300 hover:border-cyan-400/30 hover:text-white'"
                     :disabled="n > selectedSlotRemaining"
                     @click="partySize = n"
                   >
@@ -160,85 +160,86 @@
               </div>
 
               <!-- Auth notice / user drawer trigger -->
-              <div v-if="!authStore.isAuthenticated" class="rounded-[0.85rem] border border-amber-300/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">
+              <div v-if="!authStore.isAuthenticated" class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-4 text-xs text-amber-200">
                 <p class="font-bold">Требуется вход</p>
-                <p class="mt-1 text-amber-100/70">Войди через Google, чтобы забронировать lounge-зону. Контактные данные подтянутся автоматически.</p>
+                <p class="mt-1 text-amber-200/70">Войди через Google, чтобы забронировать lounge-зону. Контактные данные подтянутся автоматически.</p>
               </div>
               <button
                 v-else
                 type="button"
-                class="flex w-full items-center gap-4 rounded-[0.85rem] border border-cyan-400/15 bg-[#07141d] px-5 py-4 text-left transition hover:border-cyan-300/30"
+                class="flex w-full items-center gap-4 rounded-xl border border-white/10 bg-[#020a10] px-5 py-4 text-left transition hover:border-cyan-400/30"
                 @click="drawerOpen = true"
               >
-                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-sm font-black text-cyan-200">
+                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10 text-sm font-black text-cyan-200">
                   {{ authStore.user?.name?.charAt(0).toUpperCase() ?? '?' }}
                 </div>
                 <div class="min-w-0">
-                  <p class="text-sm font-bold text-white">{{ authStore.user?.name }}</p>
-                  <p class="truncate text-xs text-cyan-100/50">{{ authStore.user?.email }} · Нажми чтобы просмотреть</p>
+                  <p class="text-xs font-bold text-white">{{ authStore.user?.name }}</p>
+                  <p class="truncate text-[10px] text-zinc-400">{{ authStore.user?.email }} · Нажми чтобы просмотреть</p>
                 </div>
               </button>
             </div>
 
             <!-- Summary sidebar -->
-            <div class="space-y-4 rounded-[0.85rem] border border-cyan-400/18 bg-[#091924] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div class="space-y-4 rounded-xl border border-white/10 bg-[#071724]/75 backdrop-blur-md p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
               <div>
-                <p class="text-xs font-bold uppercase tracking-[0.35em] text-cyan-100/45">Итог</p>
-                <h3 class="mt-2 text-2xl font-black uppercase tracking-[-0.04em] text-white">Бронь</h3>
+                <p class="text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">Итог</p>
+                <h3 class="mt-1 text-xl font-black uppercase tracking-tight text-white">Бронь</h3>
               </div>
 
-              <div class="space-y-3 text-sm text-zinc-300">
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
+              <div class="space-y-3 text-xs text-zinc-300">
+                <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Зона</span>
-                  <span class="font-bold text-white">{{ selectedZone?.name ?? '—' }}</span>
+                  <span class="font-bold text-white uppercase">{{ selectedZone?.name ?? '—' }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
+                <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Дата</span>
                   <span class="font-bold text-white">{{ selectedDate || '—' }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
+                <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Слот</span>
                   <span class="font-bold text-white">{{ selectedSlotLabel }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
+                <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Гости</span>
                   <span class="font-bold text-white">{{ partySize > 0 ? partySize : '—' }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
+                <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Стоимость</span>
                   <span
-                    :class="totalBookingPrice === 'Бесплатно' ? 'text-emerald-400' : 'text-cyan-300'"
+                    :class="totalBookingPrice === 'Бесплатно' ? 'text-emerald-400' : 'text-cyan-400'"
                     class="font-bold"
                   >
                     {{ totalBookingPrice }}
                   </span>
                 </div>
+              </div>
+              
+              <div class="space-y-3 pt-3 border-t border-white/5">
+                <div class="flex items-center justify-between gap-4">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Контакты брони</span>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" v-model="useCustomContacts" class="rounded border-white/10 bg-black/50 text-cyan-400 focus:ring-0 focus:ring-offset-0 h-3.5 w-3.5" />
+                    <span class="text-[10px] text-zinc-400">Указать другие</span>
+                  </label>
                 </div>
                 
-                <div class="space-y-3 pt-3 border-t border-white/8">
-                  <div class="flex items-center justify-between gap-4">
-                    <span class="text-xs uppercase tracking-wider text-cyan-100/45">Контакты брони</span>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" v-model="useCustomContacts" class="rounded border-cyan-500/30 bg-black/50 text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0" />
-                      <span class="text-xs">Указать другие</span>
-                    </label>
-                  </div>
-                  
-                  <div v-if="!useCustomContacts" class="flex flex-col gap-1 text-xs text-white">
-                    <span class="font-bold">{{ authStore.user?.name || '—' }}</span>
-                    <span class="text-white/60">{{ authStore.user?.email || '—' }}</span>
-                  </div>
-                  
-                  <div v-else class="space-y-2 pt-2">
-                    <input v-model="customContacts.name" type="text" placeholder="Имя" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
-                    <input v-model="customContacts.email" type="email" placeholder="Email" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
-                    <input v-model="customContacts.phone" type="tel" placeholder="Телефон" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
-                  </div>
+                <div v-if="!useCustomContacts" class="flex flex-col gap-1 text-[11px] text-white">
+                  <span class="font-bold">{{ authStore.user?.name || '—' }}</span>
+                  <span class="text-zinc-400">{{ authStore.user?.email || '—' }}</span>
                 </div>
+                
+                <div v-else class="space-y-2 pt-2">
+                  <input v-model="customContacts.name" type="text" placeholder="Имя" class="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                  <input v-model="customContacts.email" type="email" placeholder="Email" class="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                  <input v-model="customContacts.phone" type="tel" placeholder="Телефон" class="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                </div>
+              </div>
+
               <div
                 v-if="validationMessage"
                 data-testid="lounge-validation-message"
-                class="rounded-[0.7rem] border border-rose-300/35 bg-rose-500/18 px-4 py-3 text-sm text-rose-100"
+                class="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200"
               >
                 {{ validationMessage }}
               </div>
@@ -246,7 +247,7 @@
               <div
                 v-if="submitError"
                 data-testid="lounge-submit-error"
-                class="rounded-[0.7rem] border border-orange-300/35 bg-orange-500/18 px-4 py-3 text-sm text-orange-100"
+                class="rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-xs text-orange-200"
               >
                 {{ submitError }}
               </div>
@@ -254,7 +255,7 @@
               <div
                 v-if="bookingSuccess"
                 data-testid="lounge-success-message"
-                class="rounded-[0.7rem] border border-emerald-300/35 bg-emerald-500/18 px-4 py-3 text-sm text-emerald-100"
+                class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-200"
               >
                 Бронь зафиксирована. Ждём тебя в {{ selectedZone?.name ?? 'lounge-зоне' }} в {{ selectedSlotLabel }}.
               </div>
@@ -262,7 +263,7 @@
               <button
                 data-testid="lounge-submit"
                 type="button"
-                class="w-full rounded-[0.75rem] bg-cyan-300 px-5 py-4 text-sm font-black uppercase tracking-[0.25em] text-[#020c13] transition hover:bg-cyan-200 hover:shadow-[0_0_28px_rgba(34,211,238,0.28)] disabled:cursor-not-allowed disabled:bg-cyan-300/40"
+                class="w-full rounded-lg bg-cyan-400 px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-black transition hover:bg-cyan-300 hover:shadow-[0_0_16px_rgba(34,211,238,0.15)] disabled:cursor-not-allowed disabled:bg-cyan-400/40"
                 :disabled="pending || !authStore.isAuthenticated"
                 @click="submitBooking"
               >
@@ -272,7 +273,7 @@
               <button
                 data-testid="lounge-reset"
                 type="button"
-                class="w-full rounded-[0.75rem] border border-cyan-400/20 bg-[#07141d] px-5 py-3 text-sm font-bold text-white transition hover:border-cyan-300/45"
+                class="w-full rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 text-xs font-bold text-zinc-300 transition hover:bg-white/10 hover:text-white"
                 @click="resetForm"
               >
                 Очистить выбор
@@ -373,11 +374,7 @@ const useCustomContacts = ref(false)
 const customContacts = ref({ name: '', email: '', phone: '' })
 
 // ── Computed ─────────────────────────────────────────────
-const heroStats = computed(() => [
-  { label: 'Zones', value: String(zones.value.length), hint: 'lounge-зоны' },
-  { label: 'Open', value: '10:00', hint: 'начало работы' },
-  { label: 'Close', value: '23:00', hint: 'конец работы' }
-])
+
 
 const selectedZone = computed(() =>
   zones.value.find(z => z.id === selectedZoneId.value) ?? null

@@ -1,25 +1,29 @@
 <template>
-  <div class="rounded-[0.9rem] border border-cyan-400/20 bg-[#07141d] p-8 text-center shadow-[0_20px_80px_rgba(0,0,0,0.5)] sm:p-10">
-    <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[0.6rem] border border-cyan-300/35 bg-cyan-500/12 text-cyan-200">
+  <div class="rounded-xl border border-white/5 bg-[#030c14]/80 backdrop-blur-md p-8 text-center shadow-[0_16px_50px_rgba(0,0,0,0.55)] sm:p-10">
+    <div
+      class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg border text-lg"
+      :style="iconStyle"
+    >
       <slot name="icon">
-        <span class="text-xl">✦</span>
+        <span>✦</span>
       </slot>
     </div>
-    <h2 class="text-2xl font-black uppercase tracking-[-0.04em] text-white sm:text-3xl">
+    <h2 class="text-xl font-black uppercase tracking-tight text-white sm:text-2xl">
       {{ title }}
     </h2>
-    <p class="mx-auto mt-3 max-w-2xl text-sm leading-7 text-zinc-200 sm:text-base">
+    <p class="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-zinc-300">
       {{ description }}
     </p>
     <div
       v-if="hint"
-      class="mt-3 text-xs uppercase tracking-[0.35em] text-cyan-300/80"
+      class="mt-3 text-[10px] font-bold uppercase tracking-[0.3em]"
+      :style="{ color: accent || '#22d3ee' }"
     >
       {{ hint }}
     </div>
     <div
       v-if="$slots.actions"
-      class="mt-7 flex flex-wrap items-center justify-center gap-3"
+      class="mt-6 flex flex-wrap items-center justify-center gap-3"
     >
       <slot name="actions" />
     </div>
@@ -27,9 +31,27 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string
-  description: string
-  hint?: string
-}>()
+import { computed } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    title: string
+    description: string
+    hint?: string
+    accent?: string
+  }>(),
+  {
+    accent: '#22d3ee'
+  }
+)
+
+const iconStyle = computed(() => {
+  const acc = props.accent || '#22d3ee'
+  return {
+    borderColor: `${acc}40`,
+    backgroundColor: `${acc}10`,
+    color: acc
+  }
+})
 </script>
+
