@@ -761,7 +761,7 @@
                     Без привязки
                   </option>
                   <option
-                    v-for="tag in sortedZoneTags"
+                    v-for="tag in shiftAvailableZoneTags"
                     :key="tag.id"
                     :value="String(tag.id)"
                   >
@@ -1007,7 +1007,7 @@
                   Без привязки
                 </option>
                 <option
-                  v-for="tag in sortedZoneTags"
+                  v-for="tag in shiftAvailableZoneTags"
                   :key="tag.id"
                   :value="String(tag.id)"
                 >
@@ -1077,6 +1077,7 @@ import {
   getAdminShifts,
   getAdminZones,
   getAdminZoneTags,
+  getAdminSiteSettings,
   patchAdminBooking,
   patchAdminPlace,
   patchAdminShift,
@@ -1240,6 +1241,7 @@ const feedbackMessage = ref('')
 const isCreateModalOpen = ref(false)
 
 const zoneTags = ref<ZoneTagView[]>([])
+const activeSettingsTagIds = ref<number[]>([])
 const zones = ref<ZoneView[]>([])
 const places = ref<PlaceView[]>([])
 const services = ref<ServiceView[]>([])
@@ -1339,6 +1341,14 @@ const createModalMeta = computed(() => {
 })
 
 const sortedZoneTags = computed(() => [...zoneTags.value].sort((left, right) => left.name.localeCompare(right.name)))
+
+const shiftAvailableZoneTags = computed(() => {
+  if (activeSettingsTagIds.value.length === 0) {
+    return sortedZoneTags.value
+  }
+  return sortedZoneTags.value.filter(tag => activeSettingsTagIds.value.includes(tag.id))
+})
+
 const sortedZones = computed(() => [...zones.value].sort((left, right) => left.name.localeCompare(right.name)))
 const sortedBookings = computed(() => [...bookings.value].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()))
 const sortedShifts = computed(() => [...shifts.value].sort((left, right) => new Date(right.start_time).getTime() - new Date(left.start_time).getTime()))
@@ -1695,13 +1705,14 @@ async function loadAdminData(showLoader = true) {
   }
 
   try {
-    const [zoneTagsResponse, zonesResponse, placesResponse, servicesResponse, bookingsResponse, shiftsResponse] = await Promise.all([
+    const [zoneTagsResponse, zonesResponse, placesResponse, servicesResponse, bookingsResponse, shiftsResponse, settingsResponse] = await Promise.all([
       getAdminZoneTags(),
       getAdminZones(),
       getAdminPlaces(),
       getAdminServices(),
       getAdminBookings(),
-      getAdminShifts()
+      getAdminShifts(),
+      getAdminSiteSettings()
     ])
 
     zoneTags.value = (zoneTagsResponse.zone_tags ?? []).map(normalizeZoneTag)
@@ -1710,6 +1721,9 @@ async function loadAdminData(showLoader = true) {
     services.value = (servicesResponse.services ?? []).map(normalizeService)
     bookings.value = (bookingsResponse.bookings ?? []).map(normalizeBooking)
     shifts.value = shiftsResponse.shifts ?? []
+
+    const loadedIds = settingsResponse.settings?.settings_json
+    activeSettingsTagIds.value = Array.isArray(loadedIds) ? loadedIds : []
 
     hydrateDrafts()
   } catch (error) {
