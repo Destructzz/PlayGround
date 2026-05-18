@@ -734,7 +734,18 @@ const dates = computed(() => {
     })
   )
 
-  return Array.from({ length: 30 }, (_, i) => {
+  const now = new Date()
+  let maxDays = 30 // Keep at least 30 days as a baseline
+  shifts.forEach(shift => {
+    const shiftDate = new Date(shift.start_time)
+    const diffTime = shiftDate.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    if (diffDays > maxDays) {
+      maxDays = diffDays + 1
+    }
+  })
+
+  return Array.from({ length: maxDays }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() + i)
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
