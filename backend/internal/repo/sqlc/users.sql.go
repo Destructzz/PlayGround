@@ -50,12 +50,45 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const patchUser = `-- name: PatchUser :one
+UPDATE users
+SET full_name = COALESCE($1, full_name),
+    phone = COALESCE($2, phone),
+    updated_at = NOW()
+WHERE id = $3
+RETURNING id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+`
+
+type PatchUserParams struct {
+	FullName pgtype.Text `json:"full_name"`
+	Phone    pgtype.Text `json:"phone"`
+	ID       pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) PatchUser(ctx context.Context, arg PatchUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, patchUser, arg.FullName, arg.Phone, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.GoogleID,
+		&i.FullName,
+		&i.Email,
+		&i.AvatarUrl,
+		&i.Phone,
+		&i.Role,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const upsertUser = `-- name: UpsertUser :one
 INSERT INTO users (google_id, full_name, email, avatar_url, role)
 VALUES ($1, $2, $3, $4, 'client')
 ON CONFLICT (email) DO UPDATE
 SET google_id = EXCLUDED.google_id,
-    full_name = EXCLUDED.full_name,
     avatar_url = EXCLUDED.avatar_url,
     updated_at = NOW()
 RETURNING id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at

@@ -200,6 +200,59 @@ func (a *Auth) ListUsers(c *gin.Context) {
 	).JSON(c)
 }
 
+// PatchMe updates current user profile.
+// @Summary     Update profile
+// @Description Updates current authenticated user profile
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       request body domain.PatchUserRequest true "Update parameters"
+// @Success     200 {object} map[string]interface{}
+// @Failure     400 {object} response.ErrorResponse
+// @Failure     401 {object} response.ErrorResponse
+// @Failure     500 {object} response.ErrorResponse
+// @Router      /api/v1/user/me [patch]
+func (a *Auth) PatchMe(c *gin.Context) {
+	user, ok := pkg.UserFromContext(c)
+	if !ok {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusUnauthorized),
+			response.WithError("unauthorized", "Authentication required", nil),
+		).JSON(c)
+		return
+	}
+
+	var req domain.PatchUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusBadRequest),
+			response.WithError("invalid_request", "Invalid request body format", nil),
+		).JSON(c)
+		return
+	}
+
+	updatedUser, err := a.userService.PatchUser(c.Request.Context(), user.ID, req)
+	if err != nil {
+		zap.L().Warn("failed to update user", zap.Error(err))
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("db_error", "Failed to update profile", nil),
+		).JSON(c)
+		return
+	}
+
+	response.NewResponseBuilder(
+		response.WithData("user", response.AuthUserResponse{
+			ID:        pkg.UUIDString(updatedUser.ID),
+			Email:     updatedUser.Email,
+			AvatarURL: updatedUser.AvatarUrl.String,
+			Name:      updatedUser.FullName,
+			Provider:  "google",
+			Role:      string(updatedUser.Role),
+		}),
+	).JSON(c)
+}
+
 func ensureProvider(c *gin.Context) (string, bool) {
 	provider := c.Param("provider")
 	if provider == "" {

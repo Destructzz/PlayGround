@@ -304,7 +304,10 @@ new_values AS (
         COALESCE($5, cb.start_time) AS start_time,
         COALESCE($6, cb.end_time) AS end_time,
         COALESCE($7, cb.participants) AS participants,
-        COALESCE($8, cb.status) AS status
+        COALESCE($8, cb.status) AS status,
+        COALESCE($9, cb.contact_name) AS contact_name,
+        COALESCE($10, cb.contact_email) AS contact_email,
+        COALESCE($11, cb.contact_phone) AS contact_phone
     FROM current_booking cb
 ),
 service_vars AS (
@@ -328,6 +331,9 @@ SET
         nv.participants
     ),
     status = nv.status,
+    contact_name = nv.contact_name,
+    contact_email = nv.contact_email,
+    contact_phone = nv.contact_phone,
     updated_at = NOW()
 FROM new_values nv
 JOIN service_vars sv ON sv.id = nv.service_id
@@ -360,6 +366,9 @@ type PatchBookingParams struct {
 	EndTime      pgtype.Timestamptz `json:"end_time"`
 	Participants pgtype.Int4        `json:"participants"`
 	Status       NullBookingStatus  `json:"status"`
+	ContactName  pgtype.Text        `json:"contact_name"`
+	ContactEmail pgtype.Text        `json:"contact_email"`
+	ContactPhone pgtype.Text        `json:"contact_phone"`
 }
 
 func (q *Queries) PatchBooking(ctx context.Context, arg PatchBookingParams) (Booking, error) {
@@ -372,6 +381,9 @@ func (q *Queries) PatchBooking(ctx context.Context, arg PatchBookingParams) (Boo
 		arg.EndTime,
 		arg.Participants,
 		arg.Status,
+		arg.ContactName,
+		arg.ContactEmail,
+		arg.ContactPhone,
 	)
 	var i Booking
 	err := row.Scan(

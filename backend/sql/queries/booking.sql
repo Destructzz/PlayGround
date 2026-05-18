@@ -80,7 +80,10 @@ new_values AS (
         COALESCE(sqlc.narg(start_time), cb.start_time) AS start_time,
         COALESCE(sqlc.narg(end_time), cb.end_time) AS end_time,
         COALESCE(sqlc.narg(participants), cb.participants) AS participants,
-        COALESCE(sqlc.narg(status), cb.status) AS status
+        COALESCE(sqlc.narg(status), cb.status) AS status,
+        COALESCE(sqlc.narg(contact_name), cb.contact_name) AS contact_name,
+        COALESCE(sqlc.narg(contact_email), cb.contact_email) AS contact_email,
+        COALESCE(sqlc.narg(contact_phone), cb.contact_phone) AS contact_phone
     FROM current_booking cb
 ),
 service_vars AS (
@@ -104,6 +107,9 @@ SET
         nv.participants
     ),
     status = nv.status,
+    contact_name = nv.contact_name,
+    contact_email = nv.contact_email,
+    contact_phone = nv.contact_phone,
     updated_at = NOW()
 FROM new_values nv
 JOIN service_vars sv ON sv.id = nv.service_id

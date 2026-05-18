@@ -23,3 +23,11 @@ export function buildGoogleAuthUrl(backendUrl: string, returnTo: string) {
     return_to: returnTo
   }).toString()}`
 }
+
+export function updateUserProfile(data: { full_name?: string; phone?: string }) {
+	return apiFetch<{ user: any }>('/api/v1/user/me', {
+		method: 'PATCH',
+		body: JSON.stringify(data),
+		credentials: 'include'
+	})
+}

@@ -39,6 +39,9 @@ type BookingDoc struct {
 	Participants int32     `json:"participants" example:"4"`
 	TotalPrice   string    `json:"total_price" example:"1500.00"`
 	Status       string    `json:"status" example:"created"`
+	ContactName  string    `json:"contact_name" example:"John Doe"`
+	ContactEmail string    `json:"contact_email" example:"john@example.com"`
+	ContactPhone string    `json:"contact_phone" example="+1234567890"`
 	CreatedAt    time.Time `json:"created_at" example:"2026-01-19T15:37:27.514667373Z"`
 	UpdatedAt    time.Time `json:"updated_at" example:"2026-01-19T15:37:27.514667373Z"`
 }

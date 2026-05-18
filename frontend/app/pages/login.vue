@@ -24,10 +24,11 @@
           <div class="rounded-2xl border border-cyan-400/20 bg-cyan-950/40 p-5">
             <div class="flex items-center gap-4">
               <img
-                v-if="authStore.user?.avatar_url"
+                v-if="authStore.user?.avatar_url && !avatarError"
                 :src="authStore.user.avatar_url"
                 :alt="authStore.user.name"
                 class="h-12 w-12 rounded-full border border-cyan-300/30 object-cover"
+                @error="avatarError = true"
               >
               <div
                 v-else
@@ -78,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { buildGoogleAuthUrl } from '~/api/auth'
 import { useAuthStore } from '~/stores/auth'
 
@@ -103,4 +104,9 @@ const returnTo = computed(() => {
 
 const googleAuthUrl = computed(() => buildGoogleAuthUrl(config.public.backendUrl, returnTo.value))
 const accountInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+const avatarError = ref(false)
+watch(() => authStore.user, () => {
+  avatarError.value = false
+})
 </script>

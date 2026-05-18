@@ -6,3 +6,8 @@ type UpsertUserRequest struct {
 	Email     string
 	AvatarURL string
 }
+
+type PatchUserRequest struct {
+	FullName *string `json:"full_name"`
+	Phone    *string `json:"phone"`
+}

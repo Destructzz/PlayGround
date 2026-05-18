@@ -278,6 +278,9 @@ func toBookingDoc(b sqlc.Booking) response.BookingDoc {
 		Participants: b.Participants,
 		TotalPrice:   pkg.NumericToString(b.TotalPrice),
 		Status:       string(b.Status),
+		ContactName:  b.ContactName,
+		ContactEmail: b.ContactEmail,
+		ContactPhone: b.ContactPhone,
 		CreatedAt:    b.CreatedAt.Time,
 		UpdatedAt:    b.UpdatedAt.Time,
 	}

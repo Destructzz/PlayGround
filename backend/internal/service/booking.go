@@ -216,6 +216,17 @@ func (b *BookingService) GetBookingByID(ctx context.Context, id int64) (sqlc.Boo
 }
 
 func (b *BookingService) PatchBooking(ctx context.Context, id int64, dto domain.PatchBookingRequest) (sqlc.Booking, error) {
+	currentBooking, err := b.queries.GetBookingByID(ctx, id)
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+
+	if currentBooking.Status == sqlc.BookingStatusCanceled || 
+	   currentBooking.Status == sqlc.BookingStatusCompleted || 
+	   currentBooking.StartTime.Time.Before(time.Now()) {
+		return sqlc.Booking{}, errors.New("cannot edit archived booking")
+	}
+
 	params := sqlc.PatchBookingParams{ID: id}
 
 	if dto.ZoneID != nil {
@@ -266,6 +277,16 @@ func (b *BookingService) PatchBooking(ctx context.Context, id int64, dto domain.
 			BookingStatus: *dto.Status,
 			Valid:         true,
 		}
+	}
+
+	if dto.ContactName != nil {
+		params.ContactName = pgtype.Text{String: *dto.ContactName, Valid: true}
+	}
+	if dto.ContactEmail != nil {
+		params.ContactEmail = pgtype.Text{String: *dto.ContactEmail, Valid: true}
+	}
+	if dto.ContactPhone != nil {
+		params.ContactPhone = pgtype.Text{String: *dto.ContactPhone, Valid: true}
 	}
 
 	return b.queries.PatchBooking(ctx, params)

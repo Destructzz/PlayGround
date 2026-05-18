@@ -25,4 +25,7 @@ type PatchBookingRequest struct {
 	EndTime      *string             `json:"end_time" binding:"omitempty"`
 	Participants *int                `json:"participants" binding:"omitempty,min=1"`
 	Status       *sqlc.BookingStatus `json:"status" binding:"omitempty,oneof=created confirmed canceled completed"`
+	ContactName  *string             `json:"contact_name" binding:"omitempty"`
+	ContactEmail *string             `json:"contact_email" binding:"omitempty"`
+	ContactPhone *string             `json:"contact_phone" binding:"omitempty"`
 }

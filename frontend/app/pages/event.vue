@@ -182,9 +182,25 @@
                   <span>Тариф</span>
                   <span class="font-bold text-white">{{ selectedServiceLabel }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
-                  <span>Гость</span>
-                  <span class="font-bold text-white">{{ authStore.user?.name ?? '—' }}</span>
+                <div class="space-y-3 pt-3 border-t border-white/8">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="text-xs uppercase tracking-wider text-cyan-100/45">Контакты брони</span>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" v-model="useCustomContacts" class="rounded border-fuchsia-500/30 bg-black/50 text-fuchsia-400 focus:ring-fuchsia-400 focus:ring-offset-0" />
+                      <span class="text-xs">Указать другие</span>
+                    </label>
+                  </div>
+                  
+                  <div v-if="!useCustomContacts" class="flex flex-col gap-1 text-xs text-white">
+                    <span class="font-bold">{{ authStore.user?.name || '—' }}</span>
+                    <span class="text-white/60">{{ authStore.user?.email || '—' }}</span>
+                  </div>
+                  
+                  <div v-else class="space-y-2 pt-2">
+                    <input v-model="customContacts.name" type="text" placeholder="Имя" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-500/50" />
+                    <input v-model="customContacts.email" type="email" placeholder="Email" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-500/50" />
+                    <input v-model="customContacts.phone" type="tel" placeholder="Телефон" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-500/50" />
+                  </div>
                 </div>
               </div>
 
@@ -291,8 +307,8 @@
 
 <script setup lang="ts">
 import type { CatalogZoneWithServices } from '../api/types'
-import { getEventCatalog } from '../api/catalog'
-import { createSessionBooking } from '../api/booking'
+import { getEventCatalog } from '~/api/catalog'
+import { createBooking } from '~/api/booking'
 import { useAuthStore } from '../stores/auth'
 
 useHead({ title: 'Events - PlayGround' })
@@ -313,6 +329,9 @@ const pending = ref(false)
 const registrationSuccess = ref(false)
 const submitError = ref('')
 const validationMessage = ref('')
+
+const useCustomContacts = ref(false)
+const customContacts = ref({ name: '', email: '', phone: '' })
 
 // ── Computed ──────────────────────────────────────────────
 const heroStats = computed(() => [
@@ -341,7 +360,11 @@ const selectedZone = computed(() =>
 )
 
 const selectedServiceLabel = computed(() => {
-  if (!selectedServiceId.value || !selectedZone.value) return '—'
+  if (!selectedZone.value) return '—'
+  if (!selectedZone.value.services || selectedZone.value.services.length === 0) {
+    return 'Вход свободный'
+  }
+  if (!selectedServiceId.value) return '—'
   const svc = selectedZone.value.services.find(s => s.id === selectedServiceId.value)
   return svc ? `${svc.name} · ${svc.price} ₽` : '—'
 })
@@ -378,11 +401,15 @@ function resetForm() {
   registrationSuccess.value = false
   submitError.value = ''
   validationMessage.value = ''
+  useCustomContacts.value = false
+  customContacts.value = { name: '', email: '', phone: '' }
 }
 
 function validate(): string {
   if (!selectedZone.value) return 'Сначала выбери событие из афиши.'
-  if (!selectedServiceId.value) return 'Выбери тип билета.'
+  if (selectedZone.value.services && selectedZone.value.services.length > 0 && !selectedServiceId.value) {
+    return 'Выбери тип билета.'
+  }
   if (!authStore.isAuthenticated) return 'Для регистрации необходимо войти в аккаунт.'
   return ''
 }
@@ -403,14 +430,22 @@ async function submitRegistration() {
   const endTime = d?.end_time ?? new Date(Date.now() + duration * 60000).toISOString()
 
   pending.value = true
+  
+  const cName = useCustomContacts.value ? customContacts.value.name : (authStore.user?.name || '')
+  const cEmail = useCustomContacts.value ? customContacts.value.email : (authStore.user?.email || '')
+  const cPhone = useCustomContacts.value ? customContacts.value.phone : (localStorage.getItem('playground_phone') || '')
+
   try {
-    await createSessionBooking({
+    await createBooking({
       zone_id: zone.id,
       service_id: service?.id || 0,
       start_time: startTime,
       end_time: endTime,
       participants: 1,
-      status: 'created'
+      status: 'created',
+      contact_name: cName,
+      contact_email: cEmail,
+      contact_phone: cPhone
     })
     registrationSuccess.value = true
   } catch (e: any) {
@@ -426,8 +461,10 @@ function eventDetails(zone: CatalogZoneWithServices): string[] {
   if (d?.date) parts.push(d.date)
   if (d?.format) parts.push(d.format)
   if (Array.isArray(d?.speakers)) parts.push(...d.speakers)
-  if (!parts.length && zone.services?.length) {
-    parts.push(...zone.services.map(s => s.name + ' · ' + s.price + ' ₽'))
+  if (zone.services?.length) {
+    parts.push(...zone.services.map(s => `Билет: ${s.name} · ${s.price} ₽`))
+  } else {
+    parts.push('Вход свободный')
   }
   return parts
 }

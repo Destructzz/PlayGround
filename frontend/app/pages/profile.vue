@@ -9,10 +9,11 @@
             <div class="border-b border-white/8 bg-[#08131b] px-6 py-10 flex flex-col items-center text-center">
               <div class="relative">
                 <img
-                  v-if="user?.avatar_url"
+                  v-if="user?.avatar_url && !avatarError"
                   :src="user.avatar_url"
                   :alt="user.name"
                   class="h-32 w-32 rounded-full border-4 border-cyan-300/30 object-cover shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                  @error="avatarError = true"
                 >
                 <div
                   v-else
@@ -45,6 +46,15 @@
                     </div>
                   </div>
                   <div>
+                    <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-cyan-100/40">Full Name</label>
+                    <div class="flex gap-2 mb-3">
+                      <input
+                        v-model="fullName"
+                        type="text"
+                        placeholder="Ivan Ivanov"
+                        class="flex-1 rounded-[0.7rem] border border-cyan-400/20 bg-[#081824] px-4 py-3 text-sm text-white placeholder:text-cyan-100/20 focus:border-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-300 transition-all"
+                      >
+                    </div>
                     <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-cyan-100/40">Phone Number</label>
                     <div class="flex gap-2">
                       <input
@@ -55,13 +65,13 @@
                       >
                     </div>
                     <button 
-                      class="mt-3 w-full rounded-[0.7rem] bg-cyan-300 py-3 text-xs font-black uppercase tracking-widest text-black hover:bg-cyan-200 transition-all shadow-lg active:scale-95"
-                      @click="savePhone"
+                      class="mt-4 w-full rounded-[0.7rem] bg-cyan-300 py-3 text-xs font-black uppercase tracking-widest text-black hover:bg-cyan-200 transition-all shadow-lg active:scale-95"
+                      @click="saveProfile"
                     >
                       Update Profile
                     </button>
-                    <p v-if="saveMessage" class="mt-3 text-center text-xs font-bold text-emerald-400 flex items-center justify-center gap-2">
-                      <span>✅</span> {{ saveMessage }}
+                    <p v-if="saveMessage" class="mt-3 text-center text-xs font-bold flex items-center justify-center gap-2" :class="saveMessage.includes('Ошибка') ? 'text-red-400' : 'text-emerald-400'">
+                      <span>{{ saveMessage.includes('Ошибка') ? '❌' : '✅' }}</span> {{ saveMessage }}
                     </p>
                   </div>
                 </div>
@@ -166,7 +176,9 @@
                   
                   <div>
                     <div class="flex items-center gap-2">
-                      <h3 class="text-lg font-black text-white">Бронь #{{ booking.id }}</h3>
+                      <h3 class="text-lg font-black text-white">
+                        {{ zoneNamesMap[booking.zone_id] || `Бронь #${booking.id}` }}
+                      </h3>
                       <span 
                         class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                         :class="statusClasses(booking.status)"
@@ -225,23 +237,54 @@
                   </div>
                   
                   <div class="space-y-4">
-                    <div>
-                      <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Контактные данные</p>
-                      <ul class="mt-2 space-y-2 text-sm text-zinc-300">
+                      <div class="flex items-center justify-between">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Контактные данные</p>
+                        <button 
+                          v-if="activeBookingTab === 'current' && editBookingId !== booking.id"
+                          @click.stop="startEditBooking(booking)"
+                          class="text-[10px] font-bold uppercase text-cyan-400 hover:text-cyan-300"
+                        >
+                          Редактировать
+                        </button>
+                      </div>
+
+                      <div v-if="editBookingId === booking.id" class="mt-3 space-y-3 rounded-lg border border-cyan-500/20 bg-black/20 p-3">
+                        <div>
+                          <label class="mb-1 text-[9px] font-bold uppercase text-zinc-500">Имя</label>
+                          <input v-model="editBookingContacts.name" type="text" class="w-full rounded bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-500/50" />
+                        </div>
+                        <div>
+                          <label class="mb-1 text-[9px] font-bold uppercase text-zinc-500">Email</label>
+                          <input v-model="editBookingContacts.email" type="email" class="w-full rounded bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-500/50" />
+                        </div>
+                        <div>
+                          <label class="mb-1 text-[9px] font-bold uppercase text-zinc-500">Телефон</label>
+                          <input v-model="editBookingContacts.phone" type="tel" class="w-full rounded bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-500/50" />
+                        </div>
+                        <div class="flex gap-2 pt-1">
+                          <button @click.stop="saveBookingContacts(booking.id)" class="flex-1 rounded bg-cyan-400 py-1.5 text-[10px] font-bold uppercase text-black hover:bg-cyan-300">
+                            {{ isSavingBooking ? '...' : 'Сохранить' }}
+                          </button>
+                          <button @click.stop="cancelEditBooking" class="flex-1 rounded bg-white/10 py-1.5 text-[10px] font-bold uppercase text-white hover:bg-white/20">
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+
+                      <ul v-else class="mt-2 space-y-2 text-sm text-zinc-300">
                         <li class="flex justify-between">
                           <span class="text-zinc-500">Имя:</span>
-                          <span class="font-medium text-white">{{ booking.contact_name || 'Не указано' }}</span>
+                          <span class="font-medium text-white">{{ booking.contact_name || user?.name || 'Не указано' }}</span>
                         </li>
                         <li class="flex justify-between">
                           <span class="text-zinc-500">Email:</span>
-                          <span class="font-medium text-white">{{ booking.contact_email || 'Не указан' }}</span>
+                          <span class="font-medium text-white">{{ booking.contact_email || user?.email || 'Не указан' }}</span>
                         </li>
                         <li class="flex justify-between">
                           <span class="text-zinc-500">Телефон:</span>
-                          <span class="font-medium text-white">{{ booking.contact_phone || 'Не указан' }}</span>
+                          <span class="font-medium text-white">{{ booking.contact_phone || phone || 'Не указан' }}</span>
                         </li>
                       </ul>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -254,9 +297,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { getMyBookingsCategorized } from '~/api/booking'
+import { updateUserProfile } from '~/api/auth'
+import { getMyBookingsCategorized, patchBooking } from '~/api/booking'
+import { getHomeCatalog } from '~/api/catalog'
 
 definePageMeta({
   middleware: ['auth']
@@ -270,8 +315,15 @@ const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const accountInitial = computed(() => user.value?.name?.charAt(0).toUpperCase() || 'P')
 
+const avatarError = ref(false)
+watch(() => user.value, () => {
+  avatarError.value = false
+})
+
+const fullName = ref('')
 const phone = ref('')
 const saveMessage = ref('')
+const zoneNamesMap = ref<Record<number, string>>({})
 const activeBookingTab = ref<'current' | 'archive'>('current')
 const currentBookings = ref<any[]>([])
 const archiveBookings = ref<any[]>([])
@@ -280,28 +332,102 @@ const displayBookings = computed(() => activeBookingTab.value === 'current' ? cu
 const isLoadingBookings = ref(true)
 const expandedBooking = ref<number | null>(null)
 
+// Booking Edit State
+const editBookingId = ref<number | null>(null)
+const editBookingContacts = ref({ name: '', email: '', phone: '' })
+const isSavingBooking = ref(false)
+
+function startEditBooking(booking: any) {
+  editBookingId.value = booking.id
+  editBookingContacts.value = {
+    name: booking.contact_name || user.value?.name || '',
+    email: booking.contact_email || user.value?.email || '',
+    phone: booking.contact_phone || phone.value || ''
+  }
+}
+
+function cancelEditBooking() {
+  editBookingId.value = null
+}
+
+async function saveBookingContacts(bookingId: number) {
+  isSavingBooking.value = true
+  try {
+    const resp = await patchBooking(bookingId, {
+      contact_name: editBookingContacts.value.name,
+      contact_email: editBookingContacts.value.email,
+      contact_phone: editBookingContacts.value.phone
+    })
+    
+    // Update local state
+    const index = currentBookings.value.findIndex(b => b.id === bookingId)
+    if (index !== -1 && resp.booking) {
+      currentBookings.value[index].contact_name = resp.booking.contact_name
+      currentBookings.value[index].contact_email = resp.booking.contact_email
+      currentBookings.value[index].contact_phone = resp.booking.contact_phone
+    }
+    
+    editBookingId.value = null
+  } catch (e) {
+    console.error('Failed to update booking contacts:', e)
+  } finally {
+    isSavingBooking.value = false
+  }
+}
+
+
 onMounted(async () => {
+  if (user.value) {
+    fullName.value = user.value.name
+  }
   const savedPhone = localStorage.getItem('playground_phone')
   if (savedPhone) {
     phone.value = savedPhone
   }
   
   try {
-    const response = await getMyBookingsCategorized()
-    if (response) {
-      currentBookings.value = response.current || []
-      archiveBookings.value = response.archive || []
+    const [bookingResp, catalogResp] = await Promise.all([
+      getMyBookingsCategorized().catch(() => null),
+      getHomeCatalog().catch(() => null)
+    ])
+
+    if (bookingResp) {
+      currentBookings.value = bookingResp.current || []
+      archiveBookings.value = bookingResp.archive || []
+    }
+    
+    if (catalogResp) {
+      const allZones = [
+        ...(catalogResp.gaming || []),
+        ...(catalogResp.lounge || []),
+        ...(catalogResp.event || [])
+      ]
+      for (const z of allZones) {
+        zoneNamesMap.value[z.id] = z.name
+      }
     }
   } catch (e) {
-    console.error('Failed to load bookings:', e)
+    console.error('Failed to load profile data:', e)
   } finally {
     isLoadingBookings.value = false
   }
 })
 
-function savePhone() {
+async function saveProfile() {
   localStorage.setItem('playground_phone', phone.value)
-  saveMessage.value = 'Сохранено'
+  try {
+    const resp = await updateUserProfile({
+      full_name: fullName.value,
+      phone: phone.value
+    })
+    if (resp.user) {
+      await authStore.fetchSession()
+    }
+    saveMessage.value = 'Сохранено'
+  } catch (e) {
+    console.error(e)
+    saveMessage.value = 'Ошибка сохранения'
+  }
   setTimeout(() => {
     saveMessage.value = ''
   }, 2000)

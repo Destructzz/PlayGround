@@ -163,6 +163,9 @@ export interface PatchBookingPayload {
   end_time?: string
   participants?: number
   status?: BookingStatus
+  contact_name?: string
+  contact_email?: string
+  contact_phone?: string
 }
 
 export interface GamingAvailabilityBooking {

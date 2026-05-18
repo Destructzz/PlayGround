@@ -80,6 +80,7 @@ type Querier interface {
 	PatchService(ctx context.Context, arg PatchServiceParams) (Service, error)
 	PatchShift(ctx context.Context, arg PatchShiftParams) (Shift, error)
 	PatchStaff(ctx context.Context, arg PatchStaffParams) (Staff, error)
+	PatchUser(ctx context.Context, arg PatchUserParams) (User, error)
 	PatchZone(ctx context.Context, arg PatchZoneParams) (Zone, error)
 	PatchZoneTag(ctx context.Context, arg PatchZoneTagParams) (ZoneTag, error)
 	UpdateZonePlace(ctx context.Context, arg UpdateZonePlaceParams) (ZonePlace, error)

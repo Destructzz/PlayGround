@@ -75,6 +75,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	api.GET("/ping", health.Ping)
 	api.GET("/pong", health.Pong)
 	api.GET("/user", auth.ListUsers)
+	api.PATCH("/user/me", middleware.AuthRequired(queries), auth.PatchMe)
 	api.GET("/seed", seed.Get)
 	api.POST("/seed", seed.Post)
 	api.DELETE("/seed", seed.Delete)

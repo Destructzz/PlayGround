@@ -386,7 +386,27 @@
             <p>Тариф: <span class="font-semibold text-white">{{ selectedService?.name }}</span></p>
             <p>Стоимость: <span class="font-semibold text-white">{{ selectedService ? formatPrice(selectedService.price, selectedService.currency) : 'Неизвестно' }}</span></p>
             <p>Время: <span class="font-semibold text-white">{{ bookingTimeSummary }}</span></p>
-            <p>Аккаунт: <span class="font-semibold text-white">{{ authStore.user?.name || authStore.user?.email }}</span></p>
+
+            <div class="space-y-3 pt-3 border-t border-white/8 mt-3">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-xs uppercase tracking-wider text-cyan-100/45">Контакты брони</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="useCustomContacts" class="rounded border-cyan-500/30 bg-black/50 text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0" />
+                  <span class="text-xs">Указать другие</span>
+                </label>
+              </div>
+              
+              <div v-if="!useCustomContacts" class="flex flex-col gap-1 text-xs text-white">
+                <span class="font-bold">{{ authStore.user?.name || '—' }}</span>
+                <span class="text-white/60">{{ authStore.user?.email || '—' }}</span>
+              </div>
+              
+              <div v-else class="space-y-2 pt-2">
+                <input v-model="customContacts.name" type="text" placeholder="Имя" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                <input v-model="customContacts.email" type="email" placeholder="Email" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                <input v-model="customContacts.phone" type="tel" placeholder="Телефон" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+              </div>
+            </div>
           </div>
 
           <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -632,6 +652,8 @@ const bookingLoading = ref(false)
 const availabilityLoading = ref(false)
 const availabilityError = ref('')
 const isConfirmModalOpen = ref(false)
+const useCustomContacts = ref(false)
+const customContacts = ref({ name: '', email: '', phone: '' })
 const currentAvailability = ref<GamingAvailabilityResponse | null>(null)
 const availabilityCache = reactive<Record<string, GamingAvailabilityResponse | null>>({})
 
@@ -958,6 +980,10 @@ async function confirmBooking() {
 
   bookingLoading.value = true
   bookingError.value = ''
+  
+  const cName = useCustomContacts.value ? customContacts.value.name : (authStore.user?.name || '')
+  const cEmail = useCustomContacts.value ? customContacts.value.email : (authStore.user?.email || '')
+  const cPhone = useCustomContacts.value ? customContacts.value.phone : (localStorage.getItem('playground_phone') || '')
 
   try {
     await createBooking({
@@ -968,9 +994,9 @@ async function confirmBooking() {
       end_time: selectedBookingEnd.value.toISOString(),
       participants: 1,
       status: 'confirmed',
-      contact_name: authStore.user.name,
-      contact_email: authStore.user.email,
-      contact_phone: '',
+      contact_name: cName,
+      contact_email: cEmail,
+      contact_phone: cPhone,
       details_json: JSON.stringify({
         source: 'gaming'
       })

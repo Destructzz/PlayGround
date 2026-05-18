@@ -2210,6 +2210,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/user/me": {
+            "patch": {
+                "description": "Updates current authenticated user profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update profile",
+                "parameters": [
+                    {
+                        "description": "Update parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.PatchUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/zone": {
             "get": {
                 "description": "Returns all zones",
@@ -3052,6 +3105,15 @@ const docTemplate = `{
         "domain.PatchBookingRequest": {
             "type": "object",
             "properties": {
+                "contact_email": {
+                    "type": "string"
+                },
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
                 "end_time": {
                     "type": "string"
                 },
@@ -3206,6 +3268,17 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.PatchUserRequest": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.PatchZoneRequest": {
             "type": "object",
             "properties": {
@@ -3283,6 +3356,17 @@ const docTemplate = `{
         "response.BookingDoc": {
             "type": "object",
             "properties": {
+                "contact_email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "contact_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string",
                     "example": "2026-01-19T15:37:27.514667373Z"

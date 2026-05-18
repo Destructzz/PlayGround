@@ -49,10 +49,11 @@
               class="flex items-center gap-3 group transition-opacity hover:opacity-80"
             >
               <img
-                v-if="authStore.user?.avatar_url"
+                v-if="authStore.user?.avatar_url && !avatarError"
                 :src="authStore.user.avatar_url"
                 :alt="authStore.user.name"
                 class="h-9 w-9 rounded-full border border-cyan-300/30 object-cover"
+                @error="avatarError = true"
               >
               <div
                 v-else
@@ -87,10 +88,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
 const displayName = computed(() => authStore.user?.name || 'Пользователь')
 const accountInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+const avatarError = ref(false)
+watch(() => authStore.user, () => {
+  avatarError.value = false
+})
 </script>

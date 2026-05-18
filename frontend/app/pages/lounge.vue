@@ -206,10 +206,35 @@
                 </div>
                 <div class="flex items-center justify-between gap-4 border-b border-white/8 pb-3">
                   <span>Стоимость</span>
-                  <span class="font-bold text-emerald-400">Бесплатно</span>
+                  <span
+                    :class="totalBookingPrice === 'Бесплатно' ? 'text-emerald-400' : 'text-cyan-300'"
+                    class="font-bold"
+                  >
+                    {{ totalBookingPrice }}
+                  </span>
                 </div>
-              </div>
-
+                </div>
+                
+                <div class="space-y-3 pt-3 border-t border-white/8">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="text-xs uppercase tracking-wider text-cyan-100/45">Контакты брони</span>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" v-model="useCustomContacts" class="rounded border-cyan-500/30 bg-black/50 text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0" />
+                      <span class="text-xs">Указать другие</span>
+                    </label>
+                  </div>
+                  
+                  <div v-if="!useCustomContacts" class="flex flex-col gap-1 text-xs text-white">
+                    <span class="font-bold">{{ authStore.user?.name || '—' }}</span>
+                    <span class="text-white/60">{{ authStore.user?.email || '—' }}</span>
+                  </div>
+                  
+                  <div v-else class="space-y-2 pt-2">
+                    <input v-model="customContacts.name" type="text" placeholder="Имя" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                    <input v-model="customContacts.email" type="email" placeholder="Email" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                    <input v-model="customContacts.phone" type="tel" placeholder="Телефон" class="w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-500/50" />
+                  </div>
+                </div>
               <div
                 v-if="validationMessage"
                 data-testid="lounge-validation-message"
@@ -316,8 +341,8 @@
 
 <script setup lang="ts">
 import type { CatalogZoneWithServices, LoungeSlot } from '../api/types'
-import { getLoungeCatalog, getLoungeAvailability } from '../api/catalog'
-import { createSessionBooking } from '../api/booking'
+import { getLoungeCatalog, getLoungeAvailability } from '~/api/catalog'
+import { createBooking } from '~/api/booking'
 import { useAuthStore } from '../stores/auth'
 
 useHead({ title: 'Lounge Zone - PlayGround' })
@@ -343,6 +368,9 @@ const pending = ref(false)
 const bookingSuccess = ref(false)
 const submitError = ref('')
 const validationMessage = ref('')
+
+const useCustomContacts = ref(false)
+const customContacts = ref({ name: '', email: '', phone: '' })
 
 // ── Computed ─────────────────────────────────────────────
 const heroStats = computed(() => [
@@ -381,10 +409,19 @@ const selectedSlotLabel = computed(() => {
   return slot?.label ?? '—'
 })
 
-const selectedServicePrice = computed(() => {
+const totalBookingPrice = computed(() => {
   const svc = selectedZone.value?.services?.[0]
   if (!svc) return 'Бесплатно'
-  return `${svc.price} ${svc.currency}/час`
+  
+  const priceNum = parseFloat(svc.price)
+  if (isNaN(priceNum) || priceNum <= 0) return 'Бесплатно'
+  
+  const durationInMinutes = 60
+  const participants = partySize.value || 1
+  const total = (priceNum / svc.duration) * durationInMinutes * participants
+  
+  const currencySymbol = svc.currency === 'RUB' ? '₽' : svc.currency
+  return `${Math.floor(total)} ${currencySymbol}`
 })
 
 const partySizeOptions = computed(() => {
@@ -455,6 +492,8 @@ function resetForm() {
   bookingSuccess.value = false
   submitError.value = ''
   validationMessage.value = ''
+  useCustomContacts.value = false
+  customContacts.value = { name: '', email: '', phone: '' }
 }
 
 function validate(): string {
@@ -486,14 +525,22 @@ async function submitBooking() {
   const endISO = `${selectedDate.value}T${String(selectedHour.value! + 1).padStart(2, '0')}:00:00+03:00`
 
   pending.value = true
+  
+  const cName = useCustomContacts.value ? customContacts.value.name : (authStore.user?.name || '')
+  const cEmail = useCustomContacts.value ? customContacts.value.email : (authStore.user?.email || '')
+  const cPhone = useCustomContacts.value ? customContacts.value.phone : (localStorage.getItem('playground_phone') || '')
+
   try {
-    await createSessionBooking({
+    await createBooking({
       zone_id: zone.id,
       service_id: service?.id || 0,
       start_time: startISO,
       end_time: endISO,
       participants: partySize.value,
-      status: 'created'
+      status: 'created',
+      contact_name: cName,
+      contact_email: cEmail,
+      contact_phone: cPhone
     })
     bookingSuccess.value = true
     await fetchAvailability()
@@ -505,12 +552,32 @@ async function submitBooking() {
 }
 
 function zonePerks(zone: CatalogZoneWithServices): string[] {
+  const perksList: string[] = []
   try {
     const d = zone.details_json as any
-    if (Array.isArray(d?.perks)) return d.perks
-    if (zone.services?.length) return zone.services.map(s => s.name + ' · ' + s.price + ' ₽/ч')
+    if (Array.isArray(d?.perks)) {
+      perksList.push(...d.perks)
+    }
   } catch {}
-  return []
+
+  if (zone.services?.length) {
+    const svc = zone.services[0]
+    if (svc) {
+      const priceNum = parseFloat(svc.price)
+      if (!isNaN(priceNum) && priceNum > 0) {
+        const currencySymbol = svc.currency === 'RUB' ? '₽' : svc.currency
+        perksList.push(`Тариф: ${Math.floor(priceNum)} ${currencySymbol}/час (на гостя)`)
+      } else {
+        perksList.push('Бронь: Бесплатно')
+      }
+    } else {
+      perksList.push('Бронь: Бесплатно')
+    }
+  } else {
+    perksList.push('Бронь: Бесплатно')
+  }
+  
+  return perksList
 }
 </script>
 

@@ -210,6 +210,12 @@ definitions:
     type: object
   domain.PatchBookingRequest:
     properties:
+      contact_email:
+        type: string
+      contact_name:
+        type: string
+      contact_phone:
+        type: string
       end_time:
         type: string
       participants:
@@ -308,6 +314,13 @@ definitions:
         - operator
         - tech
     type: object
+  domain.PatchUserRequest:
+    properties:
+      full_name:
+        type: string
+      phone:
+        type: string
+    type: object
   domain.PatchZoneRequest:
     properties:
       capacity:
@@ -358,6 +371,14 @@ definitions:
     type: object
   response.BookingDoc:
     properties:
+      contact_email:
+        example: john@example.com
+        type: string
+      contact_name:
+        example: John Doe
+        type: string
+      contact_phone:
+        type: string
       created_at:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
@@ -2416,6 +2437,41 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: List users
+      tags:
+      - users
+  /api/v1/user/me:
+    patch:
+      consumes:
+      - application/json
+      description: Updates current authenticated user profile
+      parameters:
+      - description: Update parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.PatchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update profile
       tags:
       - users
   /api/v1/zone:
