@@ -6,6 +6,7 @@ import (
 	"backend/internal/service"
 	"backend/internal/repo/sqlc"
 	"backend/pkg"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -286,6 +287,19 @@ func toBookingDoc(b sqlc.Booking) response.BookingDoc {
 	}
 }
 
+func toBookingDocWithNames(ctx context.Context, queries *sqlc.Queries, b sqlc.Booking) response.BookingDoc {
+	doc := toBookingDoc(b)
+	if queries != nil {
+		if zone, err := queries.GetZoneByID(ctx, b.ZoneID); err == nil {
+			doc.ZoneName = zone.Name
+		}
+		if service, err := queries.GetServiceByID(ctx, b.ServiceID); err == nil {
+			doc.ServiceName = service.Name
+		}
+	}
+	return doc
+}
+
 // GetById возвращает бронирование по id.
 // @Summary     Get booking by id
 // @Description Returns booking by id from path param
@@ -338,7 +352,7 @@ func (b *Booking) GetById(c *gin.Context) {
 	}
 
 	response.NewResponseBuilder(
-		response.WithData("booking", booking),
+		response.WithData("booking", toBookingDocWithNames(c.Request.Context(), b.bookingService.Queries(), booking)),
 	).JSON(c)
 }
 

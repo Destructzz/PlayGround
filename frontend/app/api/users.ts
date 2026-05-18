@@ -37,3 +37,9 @@ export function getBookingForSeller(bookingId: number) {
     credentials: 'include'
   })
 }
+
+export function listBookingsForSeller() {
+  return apiFetch<{ bookings: BookingRecord[] }>('/api/v1/seller/bookings', {
+    credentials: 'include'
+  })
+}

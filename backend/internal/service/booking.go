@@ -295,3 +295,7 @@ func (b *BookingService) PatchBooking(ctx context.Context, id int64, dto domain.
 func (b *BookingService) DeleteBooking(ctx context.Context, id int64) (int64, error) {
 	return b.queries.DeleteBooking(ctx, id)
 }
+
+func (b *BookingService) Queries() *sqlc.Queries {
+	return b.queries
+}

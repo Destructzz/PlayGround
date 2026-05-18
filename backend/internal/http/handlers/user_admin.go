@@ -6,6 +6,7 @@ import (
 	"backend/internal/repo/sqlc"
 	"backend/internal/service"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -171,7 +172,7 @@ func (u *UserAdmin) GetBookingForSeller(c *gin.Context) {
 
 	response.NewResponseBuilder(
 		response.WithStatus(http.StatusOK),
-		response.WithData("booking", toBookingDoc(booking)),
+		response.WithData("booking", toBookingDocWithNames(c.Request.Context(), u.bookingService.Queries(), booking)),
 	).JSON(c)
 }
 
@@ -185,4 +186,56 @@ func userToDoc(u sqlc.User) gin.H {
 		"is_active":  u.IsActive,
 		"created_at": u.CreatedAt.Time,
 	}
+}
+
+// ListBookingsForSeller returns all bookings sorted by start time descending
+func (u *UserAdmin) ListBookingsForSeller(c *gin.Context) {
+	bookings, err := u.bookingService.ListBookings(c.Request.Context())
+	if err != nil {
+		response.NewResponseBuilder(
+			response.WithStatus(http.StatusInternalServerError),
+			response.WithError("database_fault", "some problems while using database", nil),
+		).JSON(c)
+		return
+	}
+
+	// Sort bookings by start_time descending (newest bookings first)
+	sort.Slice(bookings, func(i, j int) bool {
+		return bookings[i].StartTime.Time.After(bookings[j].StartTime.Time)
+	})
+
+	// Fetch all zones and services in a batch to get names efficiently
+	zonesMap := make(map[int64]string)
+	servicesMap := make(map[int64]string)
+
+	queries := u.bookingService.Queries()
+	if queries != nil {
+		if zones, err := queries.ListZones(c.Request.Context()); err == nil {
+			for _, z := range zones {
+				zonesMap[z.ID] = z.Name
+			}
+		}
+		if services, err := queries.ListServices(c.Request.Context()); err == nil {
+			for _, s := range services {
+				servicesMap[s.ID] = s.Name
+			}
+		}
+	}
+
+	docs := make([]response.BookingDoc, 0, len(bookings))
+	for _, b := range bookings {
+		doc := toBookingDoc(b)
+		if name, ok := zonesMap[b.ZoneID]; ok {
+			doc.ZoneName = name
+		}
+		if name, ok := servicesMap[b.ServiceID]; ok {
+			doc.ServiceName = name
+		}
+		docs = append(docs, doc)
+	}
+
+	response.NewResponseBuilder(
+		response.WithStatus(http.StatusOK),
+		response.WithData("bookings", docs),
+	).JSON(c)
 }

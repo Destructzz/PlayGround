@@ -149,6 +149,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	// Seller panel (accessible by admin and seller)
 	sellerScope := api.Group("/seller", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin, domain.RoleSeller))
 	sellerScope.GET("/booking/:id", userAdmin.GetBookingForSeller)
+	sellerScope.GET("/bookings", userAdmin.ListBookingsForSeller)
 
 	// Payment CRUD
 	paymentScope := api.Group("/payment")

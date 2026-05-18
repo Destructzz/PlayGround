@@ -6,7 +6,7 @@
       <header class="border-b border-white/8 pb-6">
         <span class="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-400/60">Seller Panel</span>
         <h1 class="mt-1 text-3xl font-black uppercase tracking-tight text-white">Панель продавца</h1>
-        <p class="mt-2 text-sm text-zinc-500">Введи номер заказа чтобы найти бронирование клиента</p>
+        <p class="mt-2 text-sm text-zinc-500">Введи номер заказа или выбери из списка, чтобы проверить бронирование клиента</p>
       </header>
 
       <!-- Search form -->
@@ -61,12 +61,12 @@
               <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Детали брони</p>
               <div class="space-y-2.5 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-zinc-500">Зона ID</span>
-                  <span class="font-bold text-white">{{ booking.zone_id }}</span>
+                  <span class="text-zinc-500">Зона</span>
+                  <span class="font-bold text-white">{{ booking.zone_name || `Зона #${booking.zone_id}` }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-zinc-500">Сервис ID</span>
-                  <span class="font-bold text-white">{{ booking.service_id }}</span>
+                  <span class="text-zinc-500">Услуга / Тариф</span>
+                  <span class="font-bold text-white">{{ booking.service_name || `Сервис #${booking.service_id}` }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-zinc-500">Начало</span>
@@ -109,13 +109,103 @@
         </div>
       </Transition>
 
+      <!-- Bookings List Section -->
+      <section class="mt-8 space-y-4">
+        <div class="flex items-center justify-between border-b border-white/8 pb-4">
+          <div>
+            <h2 class="text-xl font-black uppercase tracking-tight text-white">Все заявки</h2>
+            <p class="text-xs text-zinc-500">Отсортированы по дате начала (сначала новые/ближайшие)</p>
+          </div>
+          <button 
+            @click="loadAllBookings" 
+            class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition"
+            :disabled="listLoading"
+          >
+            {{ listLoading ? 'Обновление...' : 'Обновить список' }}
+          </button>
+        </div>
+
+        <div v-if="listLoading && bookingsList.length === 0" class="flex flex-col items-center justify-center py-12 text-zinc-500">
+          <svg class="h-8 w-8 animate-spin text-cyan-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span class="mt-3 text-xs uppercase tracking-wider font-bold">Загрузка заявок...</span>
+        </div>
+
+        <div v-else-if="bookingsList.length === 0" class="text-center py-12 text-zinc-500 border border-dashed border-white/8 rounded-[0.9rem] bg-white/[0.01]">
+          Нет зарегистрированных заявок.
+        </div>
+
+        <div v-else class="grid gap-4">
+          <div 
+            v-for="b in bookingsList" 
+            :key="b.id"
+            class="group relative overflow-hidden rounded-[0.8rem] border border-white/5 bg-[#07141d]/50 p-5 transition-all duration-300 hover:border-cyan-400/30 hover:bg-[#07141d]"
+          >
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sm font-black text-white">#{{ b.id }}</span>
+                  <span class="text-xs font-bold text-cyan-300">{{ b.contact_name }}</span>
+                  <span 
+                    class="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                    :class="{
+                      'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20': b.status === 'confirmed',
+                      'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20': b.status === 'created',
+                      'bg-red-400/10 text-red-400 border border-red-400/20': b.status === 'canceled',
+                      'bg-zinc-700/30 text-zinc-400 border border-white/5': b.status === 'completed',
+                    }"
+                  >
+                    {{ b.status }}
+                  </span>
+                </div>
+                
+                <div class="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-400">
+                  <span class="flex items-center gap-1">
+                    <span class="text-zinc-600 font-medium">Зона:</span>
+                    <strong class="text-zinc-300 font-semibold">{{ b.zone_name || `Зона #${b.zone_id}` }}</strong>
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="text-zinc-600 font-medium">Тариф:</span>
+                    <strong class="text-zinc-300 font-semibold">{{ b.service_name || `Сервис #${b.service_id}` }}</strong>
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="text-zinc-600 font-medium">Участников:</span>
+                    <strong class="text-zinc-300 font-semibold">{{ b.participants }}</strong>
+                  </span>
+                </div>
+
+                <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+                  <span>📅 {{ formatDateTime(b.start_time) }} — {{ formatDateTime(b.end_time) }}</span>
+                  <span v-if="b.contact_phone">📞 {{ b.contact_phone }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between border-t border-white/5 pt-3 sm:border-t-0 sm:pt-0 gap-4">
+                <div class="text-left sm:text-right">
+                  <p class="text-[9px] uppercase tracking-wider text-zinc-600 font-bold">Итого</p>
+                  <p class="text-base font-black text-cyan-300">{{ b.total_price }} ₽</p>
+                </div>
+                <button 
+                  @click="selectBookingFromList(b.id)"
+                  class="rounded-lg bg-cyan-300/10 hover:bg-cyan-300/20 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-cyan-300 transition"
+                >
+                  Выбрать
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { getBookingForSeller } from '~/api/users'
+import { ref, onMounted } from 'vue'
+import { getBookingForSeller, listBookingsForSeller } from '~/api/users'
 
 definePageMeta({
   middleware: 'seller'
@@ -127,6 +217,9 @@ const bookingIdInput = ref<number | null>(null)
 const booking = ref<any>(null)
 const loading = ref(false)
 const error = ref('')
+
+const bookingsList = ref<any[]>([])
+const listLoading = ref(false)
 
 async function searchBooking() {
   if (!bookingIdInput.value) return
@@ -143,6 +236,24 @@ async function searchBooking() {
   }
 }
 
+async function loadAllBookings() {
+  listLoading.value = true
+  try {
+    const resp = await listBookingsForSeller()
+    bookingsList.value = resp.bookings || []
+  } catch (e) {
+    console.error('Failed to load bookings list:', e)
+  } finally {
+    listLoading.value = false
+  }
+}
+
+function selectBookingFromList(id: number) {
+  bookingIdInput.value = id
+  searchBooking()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('ru-RU', {
     day: '2-digit',
@@ -152,6 +263,10 @@ function formatDateTime(iso: string) {
     minute: '2-digit'
   })
 }
+
+onMounted(() => {
+  loadAllBookings()
+})
 </script>
 
 <style scoped>

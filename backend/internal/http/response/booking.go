@@ -34,6 +34,8 @@ type BookingDoc struct {
 	UserID       string    `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	ZoneID       int64     `json:"zone_id" example:"1"`
 	ServiceID    int64     `json:"service_id" example:"1"`
+	ZoneName     string    `json:"zone_name,omitempty" example:"Gaming Zone"`
+	ServiceName  string    `json:"service_name,omitempty" example:"Standard PC"`
 	StartTime    time.Time `json:"start_time" example:"2026-03-20T10:00:00Z"`
 	EndTime      time.Time `json:"end_time" example:"2026-03-20T11:00:00Z"`
 	Participants int32     `json:"participants" example:"4"`

@@ -120,6 +120,8 @@ export interface BookingRecord {
   user_id: string
   zone_id: number
   service_id: number
+  zone_name?: string
+  service_name?: string
   place_id?: number | null
   start_time: string
   end_time: string
