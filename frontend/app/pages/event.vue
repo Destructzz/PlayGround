@@ -110,11 +110,26 @@
                 data-testid="event-selected-card"
                 class="rounded-xl border border-white/10 bg-[#071724]/75 backdrop-blur-md p-5 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
               >
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex-1 min-w-0">
                     <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Выбранное событие</p>
-                    <h3 class="mt-2 text-xl font-black text-white uppercase">{{ selectedZone?.name ?? 'Сначала выбери событие' }}</h3>
-                    <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ selectedZone?.description ?? 'Нажми «Участвовать» на одной из карточек выше.' }}</p>
+                    <h3 class="mt-2 text-xl font-black text-white uppercase truncate">{{ selectedZone?.name ?? 'Сначала выбери событие' }}</h3>
+                    <p class="mt-1 text-xs leading-relaxed text-zinc-300">{{ selectedZone?.description ?? 'Нажми «Участвовать» на одной из карточек выше.' }}</p>
+                    
+                    <div v-if="selectedZone" class="mt-3.5 flex flex-wrap gap-4 text-xs">
+                      <div class="flex items-center gap-1.5 text-fuchsia-400 font-medium">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{{ formatEventDate((selectedZone.details_json as any)?.start_time) }}</span>
+                      </div>
+                      <div v-if="(selectedZone.details_json as any)?.format" class="flex items-center gap-1.5 text-zinc-400 font-medium">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 113.536 0V21h2v-2.757" />
+                        </svg>
+                        <span>{{ (selectedZone.details_json as any)?.format }}</span>
+                      </div>
+                    </div>
                   </div>
                   <div
                     v-if="selectedZone"
@@ -178,6 +193,10 @@
                 <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Событие</span>
                   <span class="font-bold text-white uppercase">{{ selectedZone?.name ?? '—' }}</span>
+                </div>
+                <div v-if="selectedZone" class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
+                  <span>Когда</span>
+                  <span class="font-bold text-fuchsia-400">{{ formatEventDate((selectedZone.details_json as any)?.start_time) }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
                   <span>Тариф</span>
@@ -452,10 +471,30 @@ async function submitRegistration() {
   }
 }
 
+function formatEventDate(isoStr?: string): string {
+  if (!isoStr) return '—'
+  try {
+    const d = new Date(isoStr)
+    return d.toLocaleString('ru-RU', {
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      weekday: 'short'
+    })
+  } catch {
+    return isoStr
+  }
+}
+
 function eventDetails(zone: CatalogZoneWithServices): string[] {
   const d = zone.details_json as any
   const parts: string[] = []
-  if (d?.date) parts.push(d.date)
+  if (d?.start_time) {
+    parts.push(formatEventDate(d.start_time))
+  } else if (d?.date) {
+    parts.push(d.date)
+  }
   if (d?.format) parts.push(d.format)
   if (Array.isArray(d?.speakers)) parts.push(...d.speakers)
   if (zone.services?.length) {
