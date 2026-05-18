@@ -11,3 +11,7 @@ type PatchUserRequest struct {
 	FullName *string `json:"full_name"`
 	Phone    *string `json:"phone"`
 }
+
+type SetUserRoleRequest struct {
+	Role string `json:"role" binding:"required,oneof=admin seller client"`
+}

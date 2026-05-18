@@ -3,7 +3,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TYPE role AS ENUM ('admin', 'seller', 'client');
 CREATE TYPE zone_type AS ENUM ('game', 'event', 'lounge', 'sys');
 CREATE TYPE booking_status AS ENUM ('created', 'confirmed', 'canceled', 'completed');
-CREATE TYPE position_type AS ENUM ('admin', 'seller', 'operator', 'tech');
 CREATE TYPE payment_method AS ENUM ('cash', 'card', 'online');
 CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded');
 CREATE TYPE action_type AS ENUM ('create', 'update', 'delete', 'login', 'logout');
@@ -100,18 +99,6 @@ CREATE TABLE IF NOT EXISTS bookings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS staff (
-    id BIGSERIAL PRIMARY KEY,
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
-    position position_type NOT NULL,
-    hire_date DATE NOT NULL,
-    phone VARCHAR,
-    email VARCHAR,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ
-);
 
 CREATE TABLE IF NOT EXISTS shifts (
     id BIGSERIAL PRIMARY KEY,

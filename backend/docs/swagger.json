@@ -9,6 +9,125 @@
     "host": "localhost",
     "basePath": "/",
     "paths": {
+        "/api/v1/admin/sellers": {
+            "get": {
+                "description": "Returns a list of all active users with the 'seller' role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List sellers",
+                "responses": {
+                    "200": {
+                        "description": "List of sellers",
+                        "schema": {
+                            "$ref": "#/definitions/response.ListSellersResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users": {
+            "get": {
+                "description": "Searches users by email substring. If query parameter 'q' is empty, lists all active users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Search users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email substring query",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of users",
+                        "schema": {
+                            "$ref": "#/definitions/response.SearchUsersResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/{id}/role": {
+            "patch": {
+                "description": "Sets a new role (admin, seller, client) for the specified user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Set user role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Role payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.SetUserRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.SetUserRoleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/logout": {
             "post": {
                 "description": "Clears session cookie and deletes server session",
@@ -1391,6 +1510,50 @@
                 }
             }
         },
+        "/api/v1/seller/booking/{id}": {
+            "get": {
+                "description": "Fetches any booking by its ID for administrative or seller lookup.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Get booking for seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Booking ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details",
+                        "schema": {
+                            "$ref": "#/definitions/response.BookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/service": {
             "get": {
                 "description": "Returns all services",
@@ -1932,228 +2095,6 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.ShiftResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/staff": {
-            "get": {
-                "description": "Returns all staff members",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "staff"
-                ],
-                "summary": "List staff",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.StaffListResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Creates a staff member from JSON payload",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "staff"
-                ],
-                "summary": "Create staff",
-                "parameters": [
-                    {
-                        "description": "Staff payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.CreateStaffRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/response.StaffResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/staff/{id}": {
-            "get": {
-                "description": "Returns staff member by id from path param",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "staff"
-                ],
-                "summary": "Get staff by id",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "Staff ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.StaffResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Soft-deletes staff member by id",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "staff"
-                ],
-                "summary": "Delete staff",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "Staff ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.DeleteStaffResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "Partially updates staff fields by id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "staff"
-                ],
-                "summary": "Patch staff",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "Staff ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Staff patch payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.PatchStaffRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.StaffResponse"
                         }
                     },
                     "400": {
@@ -3004,44 +2945,6 @@
                 }
             }
         },
-        "domain.CreateStaffRequest": {
-            "type": "object",
-            "required": [
-                "hire_date",
-                "position",
-                "user_id"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "hire_date": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "position": {
-                    "enum": [
-                        "admin",
-                        "seller",
-                        "operator",
-                        "tech"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/sqlc.PositionType"
-                        }
-                    ]
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
         "domain.CreateZoneRequest": {
             "type": "object",
             "required": [
@@ -3232,36 +3135,6 @@
                 }
             }
         },
-        "domain.PatchStaffRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "hire_date": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "position": {
-                    "enum": [
-                        "admin",
-                        "seller",
-                        "operator",
-                        "tech"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/sqlc.PositionType"
-                        }
-                    ]
-                }
-            }
-        },
         "domain.PatchUserRequest": {
             "type": "object",
             "properties": {
@@ -3315,6 +3188,22 @@
             "properties": {
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "domain.SetUserRoleRequest": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "seller",
+                        "client"
+                    ]
                 }
             }
         },
@@ -3518,23 +3407,6 @@
                 }
             }
         },
-        "response.DeleteStaffResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "request_id": {
-                    "type": "string",
-                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
-                }
-            }
-        },
         "response.DeleteZoneResponse": {
             "type": "object",
             "properties": {
@@ -3588,6 +3460,25 @@
                 "timestamp": {
                     "type": "string",
                     "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.ListSellersResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "sellers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserDoc"
+                    }
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-05-18T10:00:00Z"
                 }
             }
         },
@@ -3769,6 +3660,25 @@
                 }
             }
         },
+        "response.SearchUsersResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-05-18T10:00:00Z"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserDoc"
+                    }
+                }
+            }
+        },
         "response.ServiceDoc": {
             "type": "object",
             "properties": {
@@ -3846,6 +3756,22 @@
                 "timestamp": {
                     "type": "string",
                     "example": "2026-01-19T15:37:27.514667373Z"
+                }
+            }
+        },
+        "response.SetUserRoleResponse": {
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-05-18T10:00:00Z"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserDoc"
                 }
             }
         },
@@ -3957,24 +3883,24 @@
                 }
             }
         },
-        "response.StaffDoc": {
+        "response.UserDoc": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
+                    "example": "2026-05-18T10:00:00Z"
                 },
                 "email": {
                     "type": "string",
-                    "example": "staff@example.com"
+                    "example": "ivan@playground.local"
                 },
-                "hire_date": {
+                "full_name": {
                     "type": "string",
-                    "example": "2026-01-15"
+                    "example": "Иван Иванов"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "is_active": {
                     "type": "boolean",
@@ -3982,54 +3908,11 @@
                 },
                 "phone": {
                     "type": "string",
-                    "example": "+79001234567"
+                    "example": "+79991112233"
                 },
-                "position": {
+                "role": {
                     "type": "string",
-                    "example": "admin"
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                }
-            }
-        },
-        "response.StaffListResponse": {
-            "type": "object",
-            "properties": {
-                "request_id": {
-                    "type": "string",
-                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
-                },
-                "staff": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/response.StaffDoc"
-                    }
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
-                }
-            }
-        },
-        "response.StaffResponse": {
-            "type": "object",
-            "properties": {
-                "request_id": {
-                    "type": "string",
-                    "example": "7fbd6854-8e42-4451-80ee-6da60aeceacd"
-                },
-                "staff": {
-                    "$ref": "#/definitions/response.StaffDoc"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2026-01-19T15:37:27.514667373Z"
+                    "example": "seller"
                 }
             }
         },
@@ -4149,21 +4032,6 @@
                 "PaymentStatusPaid",
                 "PaymentStatusFailed",
                 "PaymentStatusRefunded"
-            ]
-        },
-        "sqlc.PositionType": {
-            "type": "string",
-            "enum": [
-                "admin",
-                "seller",
-                "operator",
-                "tech"
-            ],
-            "x-enum-varnames": [
-                "PositionTypeAdmin",
-                "PositionTypeSeller",
-                "PositionTypeOperator",
-                "PositionTypeTech"
             ]
         },
         "sqlc.ZoneType": {

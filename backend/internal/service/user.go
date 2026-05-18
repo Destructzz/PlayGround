@@ -48,3 +48,18 @@ func (s *UserService) PatchUser(ctx context.Context, userID pgtype.UUID, req dom
 	
 	return s.queries.PatchUser(ctx, params)
 }
+
+func (s *UserService) SetUserRole(ctx context.Context, userID pgtype.UUID, role sqlc.Role) (sqlc.User, error) {
+	return s.queries.SetUserRole(ctx, sqlc.SetUserRoleParams{
+		ID:   userID,
+		Role: role,
+	})
+}
+
+func (s *UserService) SearchUsersByEmail(ctx context.Context, query string) ([]sqlc.User, error) {
+	return s.queries.SearchUsersByEmail(ctx, pgtype.Text{String: query, Valid: true})
+}
+
+func (s *UserService) ListSellers(ctx context.Context) ([]sqlc.User, error) {
+	return s.queries.ListSellers(ctx)
+}

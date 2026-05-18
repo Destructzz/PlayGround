@@ -48,8 +48,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	svc := handlers.NewService(serviceService)
 	bookingService := service.NewBooking(queries)
 	booking := handlers.NewBooking(bookingService)
-	staffService := service.NewStaff(queries)
-	staff := handlers.NewStaff(staffService)
+	userAdmin := handlers.NewUserAdmin(userService, bookingService)
 	paymentService := service.NewPayment(queries)
 	payment := handlers.NewPayment(paymentService)
 	shiftService := service.NewShift(queries)
@@ -138,13 +137,15 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 
 	api.GET("/bookings/me", middleware.AuthRequired(queries), booking.Me)
 
-	// Staff CRUD
-	staffScope := api.Group("/staff")
-	staffScope.POST("", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Create)
-	staffScope.GET("", staff.Get)
-	staffScope.GET("/:id", staff.GetById)
-	staffScope.DELETE("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Delete)
-	staffScope.PATCH("/:id", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin), staff.Patch)
+	// Admin user management
+	adminScope := api.Group("/admin", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin))
+	adminScope.GET("/users", userAdmin.SearchUsers)
+	adminScope.GET("/sellers", userAdmin.ListSellers)
+	adminScope.PATCH("/users/:id/role", userAdmin.SetUserRole)
+
+	// Seller panel (accessible by admin and seller)
+	sellerScope := api.Group("/seller", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin, domain.RoleSeller))
+	sellerScope.GET("/booking/:id", userAdmin.GetBookingForSeller)
 
 	// Payment CRUD
 	paymentScope := api.Group("/payment")

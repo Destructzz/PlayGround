@@ -147,31 +147,6 @@ definitions:
     - end_time
     - start_time
     type: object
-  domain.CreateStaffRequest:
-    properties:
-      email:
-        type: string
-      hire_date:
-        type: string
-      is_active:
-        type: boolean
-      phone:
-        type: string
-      position:
-        allOf:
-        - $ref: '#/definitions/sqlc.PositionType'
-        enum:
-        - admin
-        - seller
-        - operator
-        - tech
-      user_id:
-        type: string
-    required:
-    - hire_date
-    - position
-    - user_id
-    type: object
   domain.CreateZoneRequest:
     properties:
       capacity:
@@ -295,25 +270,6 @@ definitions:
       zone_tag_id:
         type: integer
     type: object
-  domain.PatchStaffRequest:
-    properties:
-      email:
-        type: string
-      hire_date:
-        type: string
-      is_active:
-        type: boolean
-      phone:
-        type: string
-      position:
-        allOf:
-        - $ref: '#/definitions/sqlc.PositionType'
-        enum:
-        - admin
-        - seller
-        - operator
-        - tech
-    type: object
   domain.PatchUserRequest:
     properties:
       full_name:
@@ -349,6 +305,17 @@ definitions:
     properties:
       name:
         type: string
+    type: object
+  domain.SetUserRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - seller
+        - client
+        type: string
+    required:
+    - role
     type: object
   domain.UpdateServiceRequest:
     properties:
@@ -490,18 +457,6 @@ definitions:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
     type: object
-  response.DeleteStaffResponse:
-    properties:
-      id:
-        example: 1
-        type: integer
-      request_id:
-        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
-        type: string
-      timestamp:
-        example: "2026-01-19T15:37:27.514667373Z"
-        type: string
-    type: object
   response.DeleteZoneResponse:
     properties:
       id:
@@ -540,6 +495,19 @@ definitions:
         type: string
       timestamp:
         example: "2026-01-19T15:37:27.514667373Z"
+        type: string
+    type: object
+  response.ListSellersResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      sellers:
+        items:
+          $ref: '#/definitions/response.UserDoc'
+        type: array
+      timestamp:
+        example: "2026-05-18T10:00:00Z"
         type: string
     type: object
   response.MessageResponse:
@@ -667,6 +635,19 @@ definitions:
       place:
         $ref: '#/definitions/response.PlaceDoc'
     type: object
+  response.SearchUsersResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-05-18T10:00:00Z"
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/response.UserDoc'
+        type: array
+    type: object
   response.ServiceDoc:
     properties:
       created_at:
@@ -723,6 +704,17 @@ definitions:
       timestamp:
         example: "2026-01-19T15:37:27.514667373Z"
         type: string
+    type: object
+  response.SetUserRoleResponse:
+    properties:
+      request_id:
+        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
+        type: string
+      timestamp:
+        example: "2026-05-18T10:00:00Z"
+        type: string
+      user:
+        $ref: '#/definitions/response.UserDoc'
     type: object
   response.ShiftDoc:
     properties:
@@ -801,58 +793,28 @@ definitions:
         example: admin
         type: string
     type: object
-  response.StaffDoc:
+  response.UserDoc:
     properties:
       created_at:
-        example: "2026-01-19T15:37:27.514667373Z"
+        example: "2026-05-18T10:00:00Z"
         type: string
       email:
-        example: staff@example.com
+        example: ivan@playground.local
         type: string
-      hire_date:
-        example: "2026-01-15"
+      full_name:
+        example: Иван Иванов
         type: string
       id:
-        example: 1
-        type: integer
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
       is_active:
         example: true
         type: boolean
       phone:
-        example: "+79001234567"
+        example: "+79991112233"
         type: string
-      position:
-        example: admin
-        type: string
-      updated_at:
-        example: "2026-01-19T15:37:27.514667373Z"
-        type: string
-      user_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-    type: object
-  response.StaffListResponse:
-    properties:
-      request_id:
-        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
-        type: string
-      staff:
-        items:
-          $ref: '#/definitions/response.StaffDoc'
-        type: array
-      timestamp:
-        example: "2026-01-19T15:37:27.514667373Z"
-        type: string
-    type: object
-  response.StaffResponse:
-    properties:
-      request_id:
-        example: 7fbd6854-8e42-4451-80ee-6da60aeceacd
-        type: string
-      staff:
-        $ref: '#/definitions/response.StaffDoc'
-      timestamp:
-        example: "2026-01-19T15:37:27.514667373Z"
+      role:
+        example: seller
         type: string
     type: object
   response.ZoneDoc:
@@ -942,18 +904,6 @@ definitions:
     - PaymentStatusPaid
     - PaymentStatusFailed
     - PaymentStatusRefunded
-  sqlc.PositionType:
-    enum:
-    - admin
-    - seller
-    - operator
-    - tech
-    type: string
-    x-enum-varnames:
-    - PositionTypeAdmin
-    - PositionTypeSeller
-    - PositionTypeOperator
-    - PositionTypeTech
   sqlc.ZoneType:
     enum:
     - game
@@ -973,6 +923,85 @@ info:
   title: PlayGround API
   version: "1.0"
 paths:
+  /api/v1/admin/sellers:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all active users with the 'seller' role.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of sellers
+          schema:
+            $ref: '#/definitions/response.ListSellersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List sellers
+      tags:
+      - users
+  /api/v1/admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Searches users by email substring. If query parameter 'q' is empty,
+        lists all active users.
+      parameters:
+      - description: Email substring query
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            $ref: '#/definitions/response.SearchUsersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Search users
+      tags:
+      - users
+  /api/v1/admin/users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Sets a new role (admin, seller, client) for the specified user.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/domain.SetUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user info
+          schema:
+            $ref: '#/definitions/response.SetUserRoleResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Set user role
+      tags:
+      - users
   /api/v1/auth/{provider}:
     get:
       description: Redirects to provider authorization page
@@ -1896,6 +1925,35 @@ paths:
       summary: Apply seed
       tags:
       - seed
+  /api/v1/seller/booking/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetches any booking by its ID for administrative or seller lookup.
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Booking details
+          schema:
+            $ref: '#/definitions/response.BookingResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get booking for seller
+      tags:
+      - bookings
   /api/v1/service:
     get:
       description: Returns all services
@@ -2273,154 +2331,6 @@ paths:
       summary: Get shifts by zone tag id
       tags:
       - shifts
-  /api/v1/staff:
-    get:
-      description: Returns all staff members
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.StaffListResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: List staff
-      tags:
-      - staff
-    post:
-      consumes:
-      - application/json
-      description: Creates a staff member from JSON payload
-      parameters:
-      - description: Staff payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/domain.CreateStaffRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/response.StaffResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Create staff
-      tags:
-      - staff
-  /api/v1/staff/{id}:
-    delete:
-      description: Soft-deletes staff member by id
-      parameters:
-      - description: Staff ID
-        format: int64
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.DeleteStaffResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Delete staff
-      tags:
-      - staff
-    get:
-      description: Returns staff member by id from path param
-      parameters:
-      - description: Staff ID
-        format: int64
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.StaffResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Get staff by id
-      tags:
-      - staff
-    patch:
-      consumes:
-      - application/json
-      description: Partially updates staff fields by id
-      parameters:
-      - description: Staff ID
-        format: int64
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Staff patch payload
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/domain.PatchStaffRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.StaffResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Patch staff
-      tags:
-      - staff
   /api/v1/user:
     get:
       description: Returns all active users

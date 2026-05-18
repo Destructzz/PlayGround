@@ -11,6 +11,75 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getBookingByIDPublic = `-- name: GetBookingByIDPublic :one
+SELECT id, user_id, zone_id, service_id, place_id, start_time, end_time, participants, total_price, status, contact_name, contact_email, contact_phone, details_json, created_at, updated_at
+FROM bookings
+WHERE id = $1
+`
+
+func (q *Queries) GetBookingByIDPublic(ctx context.Context, id int64) (Booking, error) {
+	row := q.db.QueryRow(ctx, getBookingByIDPublic, id)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ZoneID,
+		&i.ServiceID,
+		&i.PlaceID,
+		&i.StartTime,
+		&i.EndTime,
+		&i.Participants,
+		&i.TotalPrice,
+		&i.Status,
+		&i.ContactName,
+		&i.ContactEmail,
+		&i.ContactPhone,
+		&i.DetailsJson,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listSellers = `-- name: ListSellers :many
+SELECT id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+FROM users
+WHERE role = 'seller' AND deleted_at IS NULL
+ORDER BY full_name
+`
+
+func (q *Queries) ListSellers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listSellers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.GoogleID,
+			&i.FullName,
+			&i.Email,
+			&i.AvatarUrl,
+			&i.Phone,
+			&i.Role,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
 FROM users
@@ -67,6 +136,78 @@ type PatchUserParams struct {
 
 func (q *Queries) PatchUser(ctx context.Context, arg PatchUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, patchUser, arg.FullName, arg.Phone, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.GoogleID,
+		&i.FullName,
+		&i.Email,
+		&i.AvatarUrl,
+		&i.Phone,
+		&i.Role,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const searchUsersByEmail = `-- name: SearchUsersByEmail :many
+SELECT id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+FROM users
+WHERE email ILIKE '%' || $1 || '%' AND deleted_at IS NULL
+ORDER BY full_name
+LIMIT 20
+`
+
+func (q *Queries) SearchUsersByEmail(ctx context.Context, query pgtype.Text) ([]User, error) {
+	rows, err := q.db.Query(ctx, searchUsersByEmail, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.GoogleID,
+			&i.FullName,
+			&i.Email,
+			&i.AvatarUrl,
+			&i.Phone,
+			&i.Role,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setUserRole = `-- name: SetUserRole :one
+UPDATE users
+SET role = $1::role,
+    updated_at = NOW()
+WHERE id = $2
+RETURNING id, google_id, full_name, email, avatar_url, phone, role, is_active, created_at, updated_at, deleted_at
+`
+
+type SetUserRoleParams struct {
+	Role Role        `json:"role"`
+	ID   pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error) {
+	row := q.db.QueryRow(ctx, setUserRole, arg.Role, arg.ID)
 	var i User
 	err := row.Scan(
 		&i.ID,

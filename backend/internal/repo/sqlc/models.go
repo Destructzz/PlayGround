@@ -234,50 +234,6 @@ func (ns NullPaymentStatus) Value() (driver.Value, error) {
 	return string(ns.PaymentStatus), nil
 }
 
-type PositionType string
-
-const (
-	PositionTypeAdmin    PositionType = "admin"
-	PositionTypeSeller   PositionType = "seller"
-	PositionTypeOperator PositionType = "operator"
-	PositionTypeTech     PositionType = "tech"
-)
-
-func (e *PositionType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = PositionType(s)
-	case string:
-		*e = PositionType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for PositionType: %T", src)
-	}
-	return nil
-}
-
-type NullPositionType struct {
-	PositionType PositionType `json:"position_type"`
-	Valid        bool         `json:"valid"` // Valid is true if PositionType is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullPositionType) Scan(value interface{}) error {
-	if value == nil {
-		ns.PositionType, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.PositionType.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullPositionType) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.PositionType), nil
-}
-
 type Role string
 
 const (
@@ -458,19 +414,6 @@ type SiteSetting struct {
 	SettingsJson     []byte             `json:"settings_json"`
 	GalleryItemsJson []byte             `json:"gallery_items_json"`
 	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
-}
-
-type Staff struct {
-	ID        int64              `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	Position  PositionType       `json:"position"`
-	HireDate  pgtype.Date        `json:"hire_date"`
-	Phone     pgtype.Text        `json:"phone"`
-	Email     pgtype.Text        `json:"email"`
-	IsActive  bool               `json:"is_active"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type User struct {
