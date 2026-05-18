@@ -1110,7 +1110,7 @@ interface ZoneView {
   id: number
   name: string
   zoneType: string
-  zoneTagId: number
+  zoneTagId?: number | null
   capacity: number
   description: string
   detailsJson: string
@@ -1600,7 +1600,7 @@ function makeZoneForm(zone?: ZoneView): ZoneForm {
   return {
     name: zone.name,
     type: zone.zoneType,
-    zoneTagId: String(zone.zoneTagId),
+    zoneTagId: zone.zoneTagId ? String(zone.zoneTagId) : '',
     capacity: String(zone.capacity),
     description: zone.description,
     detailsJson: zone.detailsJson,
@@ -1741,7 +1741,7 @@ function placesForZone(zoneId: number) {
     .sort((left, right) => left.sortOrder - right.sortOrder || left.label.localeCompare(right.label))
 }
 
-function zoneTagName(zoneTagId?: number) {
+function zoneTagName(zoneTagId?: number | null) {
   if (!zoneTagId) {
     return 'Без тега'
   }
