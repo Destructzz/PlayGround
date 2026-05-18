@@ -30,6 +30,8 @@
         {{ description }}
       </p>
 
+      <slot />
+
       <div class="grid gap-2 text-xs text-zinc-300">
         <div
           v-for="item in details"

@@ -80,6 +80,18 @@
             :footer-value="String(zone.capacity)"
             accent="#f472b6"
           >
+            <!-- Beautiful event schedule and format header, styled completely separate from the details list -->
+            <div class="flex flex-wrap items-center gap-2.5 text-[11px] font-bold mt-1 mb-2">
+              <span class="flex items-center gap-1.5 text-fuchsia-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {{ formatEventDate((zone.details_json as any)?.start_time) }}
+              </span>
+              <span v-if="(zone.details_json as any)?.format" class="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-zinc-400">
+                {{ (zone.details_json as any)?.format }}
+              </span>
+            </div>
             <template #cta>
               <button
                 :data-testid="`event-card-${zone.id}`"
@@ -490,12 +502,6 @@ function formatEventDate(isoStr?: string): string {
 function eventDetails(zone: CatalogZoneWithServices): string[] {
   const d = zone.details_json as any
   const parts: string[] = []
-  if (d?.start_time) {
-    parts.push(formatEventDate(d.start_time))
-  } else if (d?.date) {
-    parts.push(d.date)
-  }
-  if (d?.format) parts.push(d.format)
   if (Array.isArray(d?.speakers)) parts.push(...d.speakers)
   if (zone.services?.length) {
     parts.push(...zone.services.map(s => `Билет: ${s.name} · ${s.price} ₽`))
