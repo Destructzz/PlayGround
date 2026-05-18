@@ -117,7 +117,7 @@
                 <div v-if="availabilityLoading" class="text-xs text-zinc-400">Загружаем слоты...</div>
                 <div v-else class="flex flex-wrap gap-2">
                   <button
-                    v-for="slot in slots"
+                    v-for="slot in filteredSlots"
                     :key="slot.hour"
                     :data-testid="`lounge-slot-${slot.hour}`"
                     type="button"
@@ -392,6 +392,14 @@ const availableDates = computed(() => {
     result.push({ value: iso, label })
   }
   return result
+})
+
+const filteredSlots = computed(() => {
+  const now = new Date()
+  return slots.value.filter(slot => {
+    const slotTime = new Date(`${selectedDate.value}T${String(slot.hour).padStart(2, '0')}:00:00+03:00`)
+    return slotTime.getTime() > now.getTime()
+  })
 })
 
 const selectedSlotRemaining = computed(() => {
