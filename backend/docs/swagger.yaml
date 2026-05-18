@@ -1,5 +1,22 @@
 basePath: /
 definitions:
+  domain.AdminStatsResponse:
+    properties:
+      bookings:
+        items:
+          $ref: '#/definitions/domain.TimeSeriesData'
+        type: array
+      by_zone:
+        items:
+          $ref: '#/definitions/domain.ZoneStats'
+        type: array
+      revenue:
+        items:
+          $ref: '#/definitions/domain.TimeSeriesData'
+        type: array
+      summary:
+        $ref: '#/definitions/domain.SummaryStats'
+    type: object
   domain.ComputerSpecificationEntry:
     properties:
       title:
@@ -174,7 +191,6 @@ definitions:
     - capacity
     - name
     - type
-    - zone_tag_id
     type: object
   domain.CreateZoneTagRequest:
     properties:
@@ -317,6 +333,24 @@ definitions:
     required:
     - role
     type: object
+  domain.SummaryStats:
+    properties:
+      active_users:
+        type: integer
+      pending_bookings:
+        type: integer
+      total_bookings:
+        type: integer
+      total_revenue:
+        type: string
+    type: object
+  domain.TimeSeriesData:
+    properties:
+      date:
+        type: string
+      value:
+        type: number
+    type: object
   domain.UpdateServiceRequest:
     properties:
       currency:
@@ -335,6 +369,13 @@ definitions:
         type: integer
     type: object
   domain.UpdateSiteSettingsRequest:
+    type: object
+  domain.ZoneStats:
+    properties:
+      count:
+        type: integer
+      zone_type:
+        type: string
     type: object
   response.BookingDoc:
     properties:
@@ -942,6 +983,19 @@ paths:
       summary: List sellers
       tags:
       - users
+  /api/v1/admin/stats:
+    get:
+      description: Returns summary, revenue and booking statistics for the admin dashboard
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.AdminStatsResponse'
+      summary: Get admin dashboard statistics
+      tags:
+      - Admin
   /api/v1/admin/users:
     get:
       consumes:

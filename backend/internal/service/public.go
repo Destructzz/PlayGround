@@ -216,7 +216,10 @@ func (s *PublicService) GamingCatalog(ctx context.Context) (GamingCatalog, error
 
 	items := make([]GamingZone, 0, len(zones))
 	for _, zone := range zones {
-		if _, ok := tagOrder[zone.ZoneTagID]; !ok {
+		if !zone.ZoneTagID.Valid {
+			continue
+		}
+		if _, ok := tagOrder[zone.ZoneTagID.Int32]; !ok {
 			continue
 		}
 
@@ -390,12 +393,16 @@ func (s *PublicService) catalogByZoneType(ctx context.Context, zoneType sqlc.Zon
 	return items, nil
 }
 
-func mapCatalogZone(id int64, name string, zoneType string, zoneTagID int32, capacity int32, description pgtype.Text, isActive bool, detailsJSON []byte) PublicCatalogZone {
+func mapCatalogZone(id int64, name string, zoneType string, zoneTagID pgtype.Int4, capacity int32, description pgtype.Text, isActive bool, detailsJSON []byte) PublicCatalogZone {
+	var tagID int32
+	if zoneTagID.Valid {
+		tagID = zoneTagID.Int32
+	}
 	return PublicCatalogZone{
 		ID:          id,
 		Name:        name,
 		ZoneType:    zoneType,
-		ZoneTagID:   zoneTagID,
+		ZoneTagID:   tagID,
 		Capacity:    capacity,
 		Description: pkg.TextValue(description),
 		IsActive:    isActive,

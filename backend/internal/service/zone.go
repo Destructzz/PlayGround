@@ -28,13 +28,18 @@ func (z *ZoneService) CreateZone(ctx context.Context, dto domain.CreateZoneReque
 		detailsJSON = []byte(dto.DetailsJSON)
 	}
 
+	var zoneTagID pgtype.Int4
+	if dto.ZoneTagID != nil {
+		zoneTagID = pgtype.Int4{Int32: *dto.ZoneTagID, Valid: true}
+	}
+
 	zone, err := z.queries.CreateZone(
 		ctx,
 		sqlc.CreateZoneParams{
-			Name:      dto.Name,
-			ZoneType:  dto.Type,
-			ZoneTagID: dto.ZoneTagID,
-			Capacity:  int32(dto.Capacity),
+			Name:        dto.Name,
+			ZoneType:    dto.Type,
+			ZoneTagID:   zoneTagID,
+			Capacity:    int32(dto.Capacity),
 			Description: pgtype.Text{
 				String: dto.Description,
 				Valid:  dto.Description != "",
@@ -123,11 +128,17 @@ func (z *ZoneService) PatchByID(ctx context.Context, id int64, dto domain.PatchZ
 }
 
 func mapZoneToDomain(z sqlc.Zone) domain.Zone {
+	var zoneTagID *int32
+	if z.ZoneTagID.Valid {
+		val := z.ZoneTagID.Int32
+		zoneTagID = &val
+	}
+
 	return domain.Zone{
 		ID:          z.ID,
 		Name:        z.Name,
 		ZoneType:    z.ZoneType,
-		ZoneTagID:   z.ZoneTagID,
+		ZoneTagID:   zoneTagID,
 		Capacity:    z.Capacity,
 		Description: z.Description.String,
 		IsActive:    z.IsActive,

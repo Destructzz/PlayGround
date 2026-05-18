@@ -244,7 +244,10 @@ func (s *SeedService) Apply(ctx context.Context) (SeedSnapshot, error) {
 			zone, err = q.CreateZone(ctx, sqlc.CreateZoneParams{
 				Name:      definition.ZoneName,
 				ZoneType:  sqlc.ZoneTypeGame,
-				ZoneTagID: tag.ID,
+				ZoneTagID: pgtype.Int4{
+					Int32: tag.ID,
+					Valid: true,
+				},
 				Capacity:  definition.Capacity,
 				Description: pgtype.Text{
 					String: definition.Description,

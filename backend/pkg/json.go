@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -49,3 +50,22 @@ func NumericToString(value pgtype.Numeric) string {
 		return ""
 	}
 }
+
+func NumericToFloat64(value pgtype.Numeric) float64 {
+	if !value.Valid {
+		return 0
+	}
+
+	s := NumericToString(value)
+	if s == "" {
+		return 0
+	}
+
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
+
+	return f
+}
+

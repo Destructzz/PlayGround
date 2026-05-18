@@ -35,6 +35,7 @@ func NewService(serviceService *service.ServiceService) *Service {
 func (s *Service) Create(c *gin.Context) {
 	var dto domain.CreateServiceRequest
 	if err := c.ShouldBindJSON(&dto); err != nil {
+		zap.L().Warn("ShouldBindJSON failed", zap.Error(err))
 		br := response.ParseBindError(err)
 		response.NewResponseBuilder(
 			response.WithStatus(http.StatusBadRequest),

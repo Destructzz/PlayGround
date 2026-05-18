@@ -44,6 +44,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/stats": {
+            "get": {
+                "description": "Returns summary, revenue and booking statistics for the admin dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get admin dashboard statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.AdminStatsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/users": {
             "get": {
                 "description": "Searches users by email substring. If query parameter 'q' is empty, lists all active users.",
@@ -2732,6 +2752,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.AdminStatsResponse": {
+            "type": "object",
+            "properties": {
+                "bookings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TimeSeriesData"
+                    }
+                },
+                "by_zone": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.ZoneStats"
+                    }
+                },
+                "revenue": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.TimeSeriesData"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/domain.SummaryStats"
+                }
+            }
+        },
         "domain.ComputerSpecificationEntry": {
             "type": "object",
             "required": [
@@ -2956,8 +3002,7 @@ const docTemplate = `{
             "required": [
                 "capacity",
                 "name",
-                "type",
-                "zone_tag_id"
+                "type"
             ],
             "properties": {
                 "capacity": {
@@ -3213,6 +3258,34 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.SummaryStats": {
+            "type": "object",
+            "properties": {
+                "active_users": {
+                    "type": "integer"
+                },
+                "pending_bookings": {
+                    "type": "integer"
+                },
+                "total_bookings": {
+                    "type": "integer"
+                },
+                "total_revenue": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TimeSeriesData": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
         "domain.UpdateServiceRequest": {
             "type": "object",
             "properties": {
@@ -3241,6 +3314,17 @@ const docTemplate = `{
         },
         "domain.UpdateSiteSettingsRequest": {
             "type": "object"
+        },
+        "domain.ZoneStats": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "zone_type": {
+                    "type": "string"
+                }
+            }
         },
         "response.BookingDoc": {
             "type": "object",

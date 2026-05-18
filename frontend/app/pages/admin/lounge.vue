@@ -83,16 +83,6 @@
             </label>
           </div>
 
-          <!-- Zone tag -->
-          <div>
-            <label class="mb-2 block text-xs font-bold uppercase tracking-[0.25em] text-cyan-100/45">Zone Tag</label>
-            <select v-model="createForm.zoneTagId"
-              class="w-full rounded-[0.8rem] border border-cyan-400/18 bg-[#06131c] px-4 py-3 text-white focus:border-cyan-300 focus:outline-none">
-              <option value="">Выбери tag</option>
-              <option v-for="tag in zoneTags" :key="tag.id" :value="String(tag.id)">{{ tag.name }}</option>
-            </select>
-          </div>
-
           <!-- Управление тарифом -->
           <div class="rounded-[0.8rem] border border-cyan-400/10 bg-[#061018] p-4 space-y-4">
             <label class="flex items-center gap-2 text-sm font-bold text-white cursor-pointer select-none">
@@ -440,13 +430,12 @@ function showFeedback(tone: 'success' | 'error', msg: string) {
 
 // ── Actions ───────────────────────────────────────────────
 async function submitCreate() {
-  if (!createForm.value.zoneTagId) { showFeedback('error', 'Выбери zone tag'); return }
   isMutating.value = true
   try {
     const resp = await createAdminZone({
       name: createForm.value.name,
       type: 'lounge',
-      zone_tag_id: Number(createForm.value.zoneTagId),
+      zone_tag_id: undefined,
       capacity: Number(createForm.value.capacity),
       description: createForm.value.description,
       is_active: createForm.value.isActive,

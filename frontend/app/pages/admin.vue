@@ -127,6 +127,7 @@ const router = useRouter()
 const drawerOpen = ref(false)
 
 const adminTabs = [
+  { id: 'stats', label: 'Статистика', icon: '📊' },
   { id: 'zones', label: 'Зоны', icon: '🗺️' },
   { id: 'zone-tags', label: 'Теги зон', icon: '🏷️' },
   { id: 'bookings', label: 'Бронирования', icon: '📅' },
@@ -140,15 +141,18 @@ const adminTabs = [
 type TabId = typeof adminTabs[number]['id']
 
 const activeTab = computed<TabId>(() => {
+  if (route.path.endsWith('/stats')) return 'stats'
   if (route.path.endsWith('/lounge')) return 'lounge'
   if (route.path.endsWith('/event')) return 'event'
   if (route.path.endsWith('/settings')) return 'settings'
   if (route.path.endsWith('/sellers')) return 'sellers'
-  return (route.query.tab as TabId) || 'zones'
+  return (route.query.tab as TabId) || 'stats'
 })
 
 function selectTab(tabId: TabId) {
-  if (tabId === 'lounge') {
+  if (tabId === 'stats') {
+    router.push('/admin/stats')
+  } else if (tabId === 'lounge') {
     router.push('/admin/lounge')
   } else if (tabId === 'event') {
     router.push('/admin/event')

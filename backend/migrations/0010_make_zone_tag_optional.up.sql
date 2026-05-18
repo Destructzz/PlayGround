@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE zones ALTER COLUMN zone_tag_id DROP NOT NULL;
+
+COMMIT;

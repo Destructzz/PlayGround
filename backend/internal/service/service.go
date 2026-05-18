@@ -4,6 +4,7 @@ import (
 	"backend/internal/domain"
 	"backend/internal/repo/sqlc"
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -17,13 +18,16 @@ func NewServiceService(queries *sqlc.Queries) *ServiceService {
 }
 
 func (s *ServiceService) CreateService(ctx context.Context, dto domain.CreateServiceRequest) (sqlc.Service, error) {
+	currency := dto.Currency
+	if currency == "" {
+		currency = "RUB"
+	}
+
 	createParams := sqlc.CreateServiceParams{
 		Name: dto.Name,
 		ZoneID: dto.ZoneID,
 		Duration: int32(dto.Duration),
-		// We will set this securely below by using price.Scan()
-		// Price: ... 
-		Currency: dto.Currency,
+		Currency: currency,
 		Description: pgtype.Text{
 			String: dto.Description,
 			Valid: dto.Description != "",
@@ -34,10 +38,32 @@ func (s *ServiceService) CreateService(ctx context.Context, dto domain.CreateSer
 		createParams.IsActive = *dto.IsActive
 	}
 
-	createParams.DetailsJson = []byte("{}")
+	if dto.DetailsJSON != "" {
+		createParams.DetailsJson = []byte(dto.DetailsJSON)
+	} else {
+		createParams.DetailsJson = []byte("{}")
+	}
+
+	var priceStr string
+	switch p := dto.Price.(type) {
+	case string:
+		priceStr = p
+	case float64:
+		priceStr = fmt.Sprintf("%.2f", p)
+	case float32:
+		priceStr = fmt.Sprintf("%.2f", p)
+	case int:
+		priceStr = fmt.Sprintf("%d", p)
+	case int64:
+		priceStr = fmt.Sprintf("%d", p)
+	case int32:
+		priceStr = fmt.Sprintf("%d", p)
+	default:
+		priceStr = fmt.Sprintf("%v", p)
+	}
 
 	var parsedPrice pgtype.Numeric
-	if err := parsedPrice.Scan(dto.Price); err != nil {
+	if err := parsedPrice.Scan(priceStr); err != nil {
 		return sqlc.Service{}, err
 	}
 	createParams.Price = parsedPrice
@@ -78,8 +104,26 @@ func (s *ServiceService) UpdateService(ctx context.Context, id int64, dto domain
 	}
 
 	if dto.Price != nil {
+		var priceStr string
+		switch p := (*dto.Price).(type) {
+		case string:
+			priceStr = p
+		case float64:
+			priceStr = fmt.Sprintf("%.2f", p)
+		case float32:
+			priceStr = fmt.Sprintf("%.2f", p)
+		case int:
+			priceStr = fmt.Sprintf("%d", p)
+		case int64:
+			priceStr = fmt.Sprintf("%d", p)
+		case int32:
+			priceStr = fmt.Sprintf("%d", p)
+		default:
+			priceStr = fmt.Sprintf("%v", p)
+		}
+
 		var parsedPrice pgtype.Numeric
-		if err := parsedPrice.Scan(*dto.Price); err != nil {
+		if err := parsedPrice.Scan(priceStr); err != nil {
 			return sqlc.Service{}, err
 		}
 		patchParams.Price = parsedPrice
@@ -104,6 +148,10 @@ func (s *ServiceService) UpdateService(ctx context.Context, id int64, dto domain
 			Bool: *dto.IsActive,
 			Valid: true,
 		}
+	}
+
+	if dto.DetailsJSON != nil {
+		patchParams.DetailsJson = []byte(*dto.DetailsJSON)
 	}
 
 	return s.queries.PatchService(ctx, patchParams)

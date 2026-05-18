@@ -21,7 +21,8 @@ import type {
   ShiftListResponse,
   CreateServicePayload,
   PatchServicePayload,
-  AdminServiceResponse
+  AdminServiceResponse,
+  AdminStatsResponse
 } from './types'
 
 
@@ -186,5 +187,9 @@ export function updateAdminSiteSettings(payload: { settings_json: number[]; gall
     method: 'POST',
     body: payload
   })
+}
+
+export function getAdminStats() {
+  return apiFetch<AdminStatsResponse>('/api/v1/admin/stats', withAuth)
 }
 

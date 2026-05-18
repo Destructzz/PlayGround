@@ -226,7 +226,7 @@ export interface AdminZone {
   id: number
   name: string
   zone_type: string
-  zone_tag_id: number
+  zone_tag_id?: number | null
   capacity: number
   description: unknown
   is_active: boolean
@@ -289,7 +289,7 @@ export interface PatchZoneTagPayload {
 export interface CreateZonePayload {
   name: string
   type: string
-  zone_tag_id: number
+  zone_tag_id?: number
   capacity: number
   description: string
   is_active: boolean
@@ -359,5 +359,29 @@ export interface PatchServicePayload {
 
 export interface AdminServiceResponse extends ApiResponseMeta {
   service: AdminService
+}
+
+export interface SummaryStats {
+  total_bookings: number
+  total_revenue: string
+  active_users: number
+  pending_bookings: number
+}
+
+export interface TimeSeriesData {
+  date: string
+  value: number
+}
+
+export interface ZoneStats {
+  zone_type: string
+  count: number
+}
+
+export interface AdminStatsResponse extends ApiResponseMeta {
+  summary: SummaryStats
+  revenue: TimeSeriesData[]
+  bookings: TimeSeriesData[]
+  by_zone: ZoneStats[]
 }
 

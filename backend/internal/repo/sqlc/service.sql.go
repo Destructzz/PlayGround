@@ -96,7 +96,7 @@ JOIN zones z ON z.id = s.zone_id
 WHERE z.zone_tag_id = $1 AND s.is_active = TRUE
 `
 
-func (q *Queries) GetServiceDurationsByZoneTag(ctx context.Context, zoneTagID int32) ([]int32, error) {
+func (q *Queries) GetServiceDurationsByZoneTag(ctx context.Context, zoneTagID pgtype.Int4) ([]int32, error) {
 	rows, err := q.db.Query(ctx, getServiceDurationsByZoneTag, zoneTagID)
 	if err != nil {
 		return nil, err

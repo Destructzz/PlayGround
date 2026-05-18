@@ -434,7 +434,7 @@ type Zone struct {
 	ID          int64              `json:"id"`
 	Name        string             `json:"name"`
 	ZoneType    ZoneType           `json:"zone_type"`
-	ZoneTagID   int32              `json:"zone_tag_id"`
+	ZoneTagID   pgtype.Int4        `json:"zone_tag_id"`
 	Capacity    int32              `json:"capacity"`
 	Description pgtype.Text        `json:"description"`
 	IsActive    bool               `json:"is_active"`

@@ -20,7 +20,7 @@ RETURNING id, name, zone_type, zone_tag_id, capacity, description, is_active, de
 type CreateZoneParams struct {
 	Name        string      `json:"name"`
 	ZoneType    ZoneType    `json:"zone_type"`
-	ZoneTagID   int32       `json:"zone_tag_id"`
+	ZoneTagID   pgtype.Int4 `json:"zone_tag_id"`
 	Capacity    int32       `json:"capacity"`
 	Description pgtype.Text `json:"description"`
 	IsActive    bool        `json:"is_active"`

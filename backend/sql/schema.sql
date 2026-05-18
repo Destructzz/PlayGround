@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS zones (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE,
     zone_type zone_type NOT NULL,
-    zone_tag_id int NOT NULL REFERENCES zone_tags(id) ON DELETE CASCADE,
+    zone_tag_id int REFERENCES zone_tags(id) ON DELETE CASCADE,
     capacity INTEGER NOT NULL,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,

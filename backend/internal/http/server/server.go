@@ -59,6 +59,8 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	public := handlers.NewPublic(publicService)
 	siteSettingsService := service.NewSiteSettings(queries)
 	siteSettings := handlers.NewSiteSettings(siteSettingsService)
+	statsService := service.NewStatsService(queries)
+	stats := handlers.NewStatsHandler(statsService)
 
 	r.GET("/healthz", health.Health)
 	r.GET("/readyz", health.Ready)
@@ -142,6 +144,7 @@ func NewRouter(env string, pool *pgxpool.Pool, queries *sqlc.Queries) *gin.Engin
 	adminScope.GET("/users", userAdmin.SearchUsers)
 	adminScope.GET("/sellers", userAdmin.ListSellers)
 	adminScope.PATCH("/users/:id/role", userAdmin.SetUserRole)
+	adminScope.GET("/stats", stats.GetAdminStats)
 
 	// Seller panel (accessible by admin and seller)
 	sellerScope := api.Group("/seller", middleware.AuthRequiredWithRole(queries, domain.RoleAdmin, domain.RoleSeller))
