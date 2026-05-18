@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async () => {
     await authStore.fetchSession()
   }
 
-  if (!authStore.isAuthenticated) {
-    return navigateTo('/login')
+  if (!authStore.isAuthenticated || !['admin', 'seller'].includes(authStore.user?.role ?? '')) {
+    return navigateTo('/')
   }
 })

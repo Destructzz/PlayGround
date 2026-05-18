@@ -189,6 +189,9 @@
                     <p class="mt-1 text-sm font-medium text-cyan-100/60">
                       {{ formatDateTime(booking.start_time) }}
                     </p>
+                    <p class="mt-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                      Номер брони: <span class="text-zinc-400">#{{ booking.id }}</span>
+                    </p>
                   </div>
                 </div>
                 

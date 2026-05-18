@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(true)
 
   async function fetchSession() {
+    if (import.meta.server) return
+
     isLoading.value = true
     try {
       const data = await fetchAuthSession()

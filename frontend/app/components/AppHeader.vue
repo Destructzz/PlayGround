@@ -35,6 +35,11 @@
           to="/admin"
           class="hover:text-white hover:drop-shadow-[0_0_8px_rgba(103,232,249,0.8)] transition-all"
         >Admin</NuxtLink>
+        <NuxtLink
+          v-if="authStore.user?.role === 'seller' || authStore.user?.role === 'admin'"
+          to="/seller"
+          class="hover:text-white hover:drop-shadow-[0_0_8px_rgba(167,139,250,0.8)] transition-all text-violet-300/70"
+        >Seller</NuxtLink>
       </nav>
 
       <!-- Кнопки действий -->
